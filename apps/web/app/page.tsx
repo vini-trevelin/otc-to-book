@@ -3,7 +3,22 @@
 import { Play, Send, Square } from "lucide-react";
 import { FormEvent, useEffect, useMemo, useReducer, useRef, useState } from "react";
 
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
+import { Separator } from "@/components/ui/separator";
+import { Slider } from "@/components/ui/slider";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow
+} from "@/components/ui/table";
 import type { BookRow, ClientEvent } from "@/lib/events";
 import { initialState, workstationReducer } from "@/lib/state";
 import { cn } from "@/lib/utils";
@@ -38,6 +53,7 @@ export default function WorkstationPage() {
   }, []);
 
   const books = useMemo(() => Object.values(state.book?.books ?? {}), [state.book]);
+  const isConnected = state.connection === "connected";
 
   function sendClientEvent(event: ClientEvent) {
     if (socketRef.current?.readyState === WebSocket.OPEN) {
@@ -79,50 +95,52 @@ export default function WorkstationPage() {
   }
 
   return (
-    <main className="grid min-h-screen grid-cols-1 gap-3 p-3 lg:grid-cols-[360px_1fr_380px]">
-      <section className="rounded-md border border-[var(--border)] bg-[var(--panel)]">
+    <main className="grid min-h-screen grid-cols-1 gap-3 overflow-x-hidden bg-background p-3 text-foreground lg:grid-cols-[minmax(300px,0.8fr)_minmax(460px,1.25fr)_minmax(320px,0.9fr)]">
+      <Card className="gap-0 rounded-md bg-[var(--panel)] py-0">
         <PanelHeader title="Broker Chat" status={state.connection} />
-        <form className="space-y-3 border-b border-[var(--border)] p-3" onSubmit={sendMessage}>
+        <form className="space-y-3 p-3" onSubmit={sendMessage}>
           <div className="grid grid-cols-[1fr_110px] gap-2">
-            <input
-              className="rounded border border-[var(--border)] bg-black px-3 py-2 text-sm"
+            <Input
+              className="h-10 bg-black text-sm"
               value={message}
               onChange={(event) => setMessage(event.target.value)}
               aria-label="Message"
             />
-            <select
-              className="rounded border border-[var(--border)] bg-black px-2 text-sm"
+            <NativeSelect
+              className="w-full"
               value={brokerId}
               onChange={(event) => setBrokerId(event.target.value)}
               aria-label="Broker"
             >
-              <option>BROKER_A</option>
-              <option>BROKER_B</option>
-              <option>BROKER_C</option>
-            </select>
+              <NativeSelectOption>BROKER_A</NativeSelectOption>
+              <NativeSelectOption>BROKER_B</NativeSelectOption>
+              <NativeSelectOption>BROKER_C</NativeSelectOption>
+            </NativeSelect>
           </div>
-          <Button className="gap-2" type="submit">
+          <Button className="gap-2" type="submit" variant="secondary" disabled={!isConnected}>
             <Send size={16} /> Send
           </Button>
         </form>
 
-        <div className="space-y-3 border-b border-[var(--border)] p-3">
+        <Separator />
+        <CardContent className="space-y-3 p-3">
           <div className="grid grid-cols-3 gap-2 text-xs">
-            <label>
+            <Label className="block">
               Random
-              <input
-                className="mt-1 w-full"
-                type="range"
-                min="1"
-                max="5"
-                value={randomness}
-                onChange={(event) => setRandomness(Number(event.target.value))}
+              <Slider
+                className="mt-3"
+                min={1}
+                max={5}
+                value={[randomness]}
+                onValueChange={(value) =>
+                  setRandomness(Array.isArray(value) ? (value[0] ?? 3) : value)
+                }
               />
-            </label>
-            <label>
+            </Label>
+            <Label className="block">
               Noise
-              <input
-                className="mt-1 w-full"
+              <Input
+                className="mt-1"
                 type="number"
                 min="0"
                 max="1"
@@ -130,28 +148,29 @@ export default function WorkstationPage() {
                 value={noiseRate}
                 onChange={(event) => setNoiseRate(Number(event.target.value))}
               />
-            </label>
-            <label>
+            </Label>
+            <Label className="block">
               MS
-              <input
-                className="mt-1 w-full rounded border border-[var(--border)] bg-black px-2 py-1"
+              <Input
+                className="mt-1 bg-black"
                 type="number"
                 min="250"
                 value={intervalMs}
                 onChange={(event) => setIntervalMs(Number(event.target.value))}
               />
-            </label>
+            </Label>
           </div>
           <div className="flex gap-2">
             <Button
               className="gap-2 bg-emerald-500 text-black hover:bg-emerald-400"
               type="button"
               onClick={startSimulator}
+              disabled={!isConnected}
             >
               <Play size={16} /> Start
             </Button>
             <Button
-              className="gap-2"
+              className="gap-2 border-zinc-700 text-zinc-100 hover:bg-zinc-800"
               variant="outline"
               type="button"
               onClick={stopSimulator}
@@ -159,117 +178,121 @@ export default function WorkstationPage() {
               <Square size={16} /> Stop
             </Button>
           </div>
-          <label className="block text-xs text-[var(--muted-foreground)]">
+          <Label className="block text-xs text-[var(--muted-foreground)]">
             Replay JSON/CSV
-            <input
+            <Input
               className="mt-2 block w-full text-xs"
               type="file"
               accept=".csv,.json,.jsonl"
               onChange={(event) => void uploadSample(event.target.files?.[0] ?? null)}
             />
-          </label>
+          </Label>
           {uploadStatus ? <p className="text-xs text-[var(--muted-foreground)]">{uploadStatus}</p> : null}
-        </div>
+        </CardContent>
 
+        <Separator />
         <div className="max-h-[48vh] overflow-auto p-3">
           {state.messages.length === 0 ? (
             <Empty text="No messages yet" />
           ) : (
             state.messages.map((item) => (
-              <div className="mb-3 rounded border border-[var(--border)] p-2 text-sm" key={item.message_id}>
+              <Card className="mb-3 gap-1 rounded-md py-2 text-sm" key={item.message_id}>
                 <div className="mb-1 flex justify-between text-xs text-[var(--muted-foreground)]">
                   <span>{item.broker_id}</span>
                   <span>{formatTime(item.received_timestamp)}</span>
                 </div>
                 <div>{item.text}</div>
-              </div>
+              </Card>
             ))
           )}
         </div>
-      </section>
+      </Card>
 
-      <section className="rounded-md border border-[var(--border)] bg-[var(--panel)]">
+      <Card className="gap-0 rounded-md bg-[var(--panel)] py-0">
         <PanelHeader title="Consolidated Book" status={state.simulatorRunning ? "auto" : "manual"} />
-        <div className="space-y-4 p-3">
+        <CardContent className="space-y-4 p-3">
           {books.length === 0 ? <Empty text="Book empty" /> : null}
           {books.map((book) => (
-            <div className="rounded border border-[var(--border)]" key={book.instrument_id}>
+            <Card className="gap-0 rounded-md py-0" key={book.instrument_id}>
               <div className="grid grid-cols-2 border-b border-[var(--border)] bg-[var(--panel-strong)] p-3">
                 <Best label="BEST BID" row={book.best_bid} />
                 <Best label="BEST ASK" row={book.best_ask} ask />
               </div>
-              <table className="w-full border-collapse text-sm">
-                <thead className="text-left text-xs uppercase text-[var(--muted-foreground)]">
-                  <tr>
-                    <th className="p-2">Side</th>
-                    <th className="p-2">Price</th>
-                    <th className="p-2">Size</th>
-                    <th className="p-2">Broker</th>
-                    <th className="p-2">Received</th>
-                    <th className="p-2">Status</th>
-                  </tr>
-                </thead>
-                <tbody>
+              <Table>
+                <TableHeader className="text-xs uppercase text-[var(--muted-foreground)]">
+                  <TableRow>
+                    <TableHead>Side</TableHead>
+                    <TableHead>Price</TableHead>
+                    <TableHead>Size</TableHead>
+                    <TableHead>Broker</TableHead>
+                    <TableHead>Received</TableHead>
+                    <TableHead>Status</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
                   {book.rows.map((row) => (
-                    <tr
+                    <TableRow
                       className={cn(
-                        "border-t border-[var(--border)]",
                         row.status === "SUPERSEDED" && "text-[var(--muted-foreground)] opacity-55"
                       )}
                       data-testid={`book-row-${row.status.toLowerCase()}`}
                       key={row.row_id}
                     >
-                      <td className="p-2">{row.quote_event.side}</td>
-                      <td className="p-2">{row.quote_event.quote_value}</td>
-                      <td className="p-2">
+                      <TableCell>{row.quote_event.side}</TableCell>
+                      <TableCell>{row.quote_event.quote_value}</TableCell>
+                      <TableCell>
                         {row.quote_event.quantity}
                         {row.quote_event.quantity_unit.toLowerCase()}
-                      </td>
-                      <td className="p-2">{row.quote_event.broker_id}</td>
-                      <td className="p-2">{formatTime(row.quote_event.received_timestamp)}</td>
-                      <td className="p-2">{row.status}</td>
-                    </tr>
+                      </TableCell>
+                      <TableCell>{row.quote_event.broker_id}</TableCell>
+                      <TableCell>{formatTime(row.quote_event.received_timestamp)}</TableCell>
+                      <TableCell>{row.status}</TableCell>
+                    </TableRow>
                   ))}
-                </tbody>
-              </table>
-            </div>
+                </TableBody>
+              </Table>
+            </Card>
           ))}
-        </div>
-      </section>
+        </CardContent>
+      </Card>
 
-      <section className="rounded-md border border-[var(--border)] bg-[var(--panel)]">
+      <Card className="gap-0 rounded-md bg-[var(--panel)] py-0">
         <PanelHeader title="Parsed Events" status={`seq ${state.lastSequence}`} />
-        <div className="max-h-[88vh] overflow-auto p-3">
+        <CardContent className="max-h-[88vh] overflow-auto p-3">
           {state.events.length === 0 ? <Empty text="No parsed events yet" /> : null}
           {state.events.map((event) => (
-            <div className="mb-3 rounded border border-[var(--border)] p-2 text-xs" key={event.event_id}>
+            <Card className="mb-3 gap-1 rounded-md py-2 text-xs" key={event.event_id}>
               <div className="mb-1 flex justify-between">
                 <span className="font-semibold">{event.event_type}</span>
                 <span className="text-[var(--muted-foreground)]">#{event.sequence}</span>
               </div>
               <div className="text-[var(--muted-foreground)]">corr {event.correlation_id}</div>
-              <pre className="mt-2 overflow-auto whitespace-pre-wrap text-[11px]">
+              <pre className="mt-2 max-h-52 overflow-auto whitespace-pre-wrap break-words text-[11px] text-zinc-300">
                 {JSON.stringify(event.payload, null, 2)}
               </pre>
-            </div>
+            </Card>
           ))}
-        </div>
-      </section>
+        </CardContent>
+      </Card>
     </main>
   );
 }
 
 function PanelHeader({ title, status }: { title: string; status: string }) {
   return (
-    <div className="flex items-center justify-between border-b border-[var(--border)] p-3">
+    <CardHeader className="flex flex-row items-center justify-between border-b border-[var(--border)] p-3">
       <h1 className="text-sm font-semibold uppercase tracking-wide">{title}</h1>
-      <span className="rounded bg-zinc-800 px-2 py-1 text-xs text-zinc-200">{status}</span>
-    </div>
+      <Badge variant="outline">{status}</Badge>
+    </CardHeader>
   );
 }
 
 function Empty({ text }: { text: string }) {
-  return <div className="rounded border border-dashed border-[var(--border)] p-4 text-sm text-[var(--muted-foreground)]">{text}</div>;
+  return (
+    <Card className="rounded-md border-dashed p-4 text-sm text-[var(--muted-foreground)]">
+      {text}
+    </Card>
+  );
 }
 
 function Best({ label, row, ask = false }: { label: string; row: BookRow | null; ask?: boolean }) {
@@ -280,7 +303,9 @@ function Best({ label, row, ask = false }: { label: string; row: BookRow | null;
         {row ? row.quote_event.quote_value : "-"}
       </div>
       <div className="text-xs text-[var(--muted-foreground)]">
-        {row ? `${row.quote_event.quantity}${row.quote_event.quantity_unit.toLowerCase()} ${row.quote_event.broker_id}` : "No active quote"}
+        {row
+          ? `${row.quote_event.quantity}${row.quote_event.quantity_unit.toLowerCase()} ${row.quote_event.broker_id}`
+          : "No active quote"}
       </div>
     </div>
   );

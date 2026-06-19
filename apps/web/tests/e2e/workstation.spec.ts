@@ -4,6 +4,7 @@ test("user message updates chat, event feed, and book", async ({ page }) => {
   await page.goto("/");
 
   await expect(page.getByText("Broker Chat")).toBeVisible();
+  await expect(page.getByText("connected")).toBeVisible();
   await page.getByLabel("Message").fill("vendo petro27 7.30 5mm");
   await page.getByRole("button", { name: "Send" }).click();
 
@@ -16,6 +17,7 @@ test("user message updates chat, event feed, and book", async ({ page }) => {
 test("replacement quote mutes superseded row", async ({ page }) => {
   await page.goto("/");
 
+  await expect(page.getByText("connected")).toBeVisible();
   await page.getByLabel("Message").fill("bid petro27 7.25");
   await page.getByRole("button", { name: "Send" }).click();
   await expect(page.getByText("7.25").first()).toBeVisible();
@@ -30,6 +32,7 @@ test("replacement quote mutes superseded row", async ({ page }) => {
 test("auto simulator starts", async ({ page }) => {
   await page.goto("/");
 
+  await expect(page.getByText("connected")).toBeVisible();
   await page.getByRole("button", { name: "Start" }).click();
 
   await expect(page.getByText(/message_received|quote_/).first()).toBeVisible({ timeout: 5000 });
