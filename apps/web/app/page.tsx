@@ -1,7 +1,7 @@
 "use client";
 
-import { Play, Send, Square } from "lucide-react";
-import { FormEvent, useEffect, useMemo, useReducer, useRef, useState } from "react";
+import { Minus, Play, Plus, Send, Square } from "lucide-react";
+import { FormEvent, useEffect, useId, useMemo, useReducer, useRef, useState } from "react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -129,28 +129,21 @@ export default function WorkstationPage() {
                 }
               />
             </Label>
-            <Label className="block">
-              Noise
-              <Input
-                className="mt-1"
-                type="number"
-                min="0"
-                max="1"
-                step="0.1"
-                value={noiseRate}
-                onChange={(event) => setNoiseRate(Number(event.target.value))}
-              />
-            </Label>
-            <Label className="block">
-              MS
-              <Input
-                className="mt-1 bg-black"
-                type="number"
-                min="250"
-                value={intervalMs}
-                onChange={(event) => setIntervalMs(Number(event.target.value))}
-              />
-            </Label>
+            <NumberStepper
+              label="Noise"
+              max={1}
+              min={0}
+              onChange={setNoiseRate}
+              step={0.1}
+              value={noiseRate}
+            />
+            <NumberStepper
+              label="Step"
+              min={250}
+              onChange={setIntervalMs}
+              step={250}
+              value={intervalMs}
+            />
           </div>
           <div className="flex gap-2">
             <Button
@@ -329,6 +322,76 @@ function BookQuoteRow({ row, ask = false }: { row: BookRow; ask?: boolean }) {
       <span className="text-right text-[var(--muted-foreground)]">
         {formatTime(row.quote_event.received_timestamp)}
       </span>
+    </div>
+  );
+}
+
+function NumberStepper({
+  label,
+  value,
+  min,
+  max,
+  step,
+  onChange
+}: {
+  label: string;
+  value: number;
+  min: number;
+  max?: number;
+  step: number;
+  onChange: (value: number) => void;
+}) {
+  const id = useId();
+  const decimals = String(step).split(".")[1]?.length ?? 0;
+
+  function clamp(next: number) {
+    const bounded = Math.min(max ?? Number.POSITIVE_INFINITY, Math.max(min, next));
+    return Number(bounded.toFixed(decimals));
+  }
+
+  function update(next: number) {
+    onChange(clamp(next));
+  }
+
+  return (
+    <div>
+      <Label className="block" htmlFor={id}>
+        {label}
+      </Label>
+      <div className="mt-1 grid grid-cols-[24px_1fr_24px] gap-1">
+        <Button
+          aria-label={`Decrease ${label}`}
+          className="h-7 px-0"
+          onClick={() => update(value - step)}
+          size="sm"
+          type="button"
+          variant="outline"
+        >
+          <Minus size={12} />
+        </Button>
+        <Input
+          aria-label={label}
+          className="h-7 bg-black text-center font-mono"
+          id={id}
+          inputMode={decimals > 0 ? "decimal" : "numeric"}
+          onBlur={() => update(value)}
+          onChange={(event) => {
+            const next = Number(event.target.value);
+            if (Number.isFinite(next)) update(next);
+          }}
+          value={value}
+        />
+        <Button
+          aria-label={`Increase ${label}`}
+          className="h-7 px-0"
+          onClick={() => update(value + step)}
+          size="sm"
+          type="button"
+          variant="outline"
+        >
+          <Plus size={12} />
+        </Button>
+      </div>
     </div>
   );
 }
