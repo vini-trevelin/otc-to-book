@@ -1,2 +1,7 @@
 packages:
   - "apps/*"
+  - "packages/*"
+allowBuilds:
+  sharp: false
+minimumReleaseAgeExclude:
+  - lucide-react@1.21.0
