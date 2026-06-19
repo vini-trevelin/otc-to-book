@@ -3,6 +3,7 @@
 import { Play, Send, Square } from "lucide-react";
 import { FormEvent, useEffect, useMemo, useReducer, useRef, useState } from "react";
 
+import { Button } from "@/components/ui/button";
 import type { BookRow, ClientEvent } from "@/lib/events";
 import { initialState, workstationReducer } from "@/lib/state";
 import { cn } from "@/lib/utils";
@@ -100,9 +101,9 @@ export default function WorkstationPage() {
               <option>BROKER_C</option>
             </select>
           </div>
-          <button className="inline-flex items-center gap-2 rounded bg-zinc-100 px-3 py-2 text-sm font-medium text-zinc-950">
+          <Button className="gap-2" type="submit">
             <Send size={16} /> Send
-          </button>
+          </Button>
         </form>
 
         <div className="space-y-3 border-b border-[var(--border)] p-3">
@@ -142,20 +143,21 @@ export default function WorkstationPage() {
             </label>
           </div>
           <div className="flex gap-2">
-            <button
-              className="inline-flex items-center gap-2 rounded bg-emerald-500 px-3 py-2 text-sm font-medium text-black"
+            <Button
+              className="gap-2 bg-emerald-500 text-black hover:bg-emerald-400"
               type="button"
               onClick={startSimulator}
             >
               <Play size={16} /> Start
-            </button>
-            <button
-              className="inline-flex items-center gap-2 rounded bg-zinc-800 px-3 py-2 text-sm"
+            </Button>
+            <Button
+              className="gap-2"
+              variant="outline"
               type="button"
               onClick={stopSimulator}
             >
               <Square size={16} /> Stop
-            </button>
+            </Button>
           </div>
           <label className="block text-xs text-[var(--muted-foreground)]">
             Replay JSON/CSV

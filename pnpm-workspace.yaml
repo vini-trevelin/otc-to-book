@@ -5,3 +5,5 @@ allowBuilds:
   sharp: false
 minimumReleaseAgeExclude:
   - lucide-react@1.21.0
+  - '@base-ui/react@1.6.0'
+  - '@base-ui/utils@0.3.1'
