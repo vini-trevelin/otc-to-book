@@ -11,14 +11,6 @@ import { Label } from "@/components/ui/label";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 import { Separator } from "@/components/ui/separator";
 import { Slider } from "@/components/ui/slider";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow
-} from "@/components/ui/table";
 import type { BookRow, ClientEvent } from "@/lib/events";
 import { initialState, workstationReducer } from "@/lib/state";
 import { cn } from "@/lib/utils";
@@ -214,43 +206,26 @@ export default function WorkstationPage() {
           {books.length === 0 ? <Empty text="Book empty" /> : null}
           {books.map((book) => (
             <Card className="gap-0 rounded-md py-0" key={book.instrument_id}>
-              <div className="grid grid-cols-2 border-b border-[var(--border)] bg-[var(--panel-strong)] p-3">
-                <Best label="BEST BID" row={book.best_bid} />
-                <Best label="BEST ASK" row={book.best_ask} ask />
+              <div className="flex items-center justify-between border-b border-[var(--border)] bg-[var(--panel-strong)] p-3">
+                <div>
+                  <div className="text-xs text-[var(--muted-foreground)]">Ticker</div>
+                  <div className="font-mono text-lg font-semibold">{book.instrument_id}</div>
+                </div>
+                <div className="text-right text-xs text-[var(--muted-foreground)]">
+                  updated {formatTime(book.updated_timestamp)}
+                </div>
               </div>
-              <Table>
-                <TableHeader className="text-xs uppercase text-[var(--muted-foreground)]">
-                  <TableRow>
-                    <TableHead>Side</TableHead>
-                    <TableHead>Price</TableHead>
-                    <TableHead>Size</TableHead>
-                    <TableHead>Broker</TableHead>
-                    <TableHead>Received</TableHead>
-                    <TableHead>Status</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {book.rows.map((row) => (
-                    <TableRow
-                      className={cn(
-                        row.status === "SUPERSEDED" && "text-[var(--muted-foreground)] opacity-55"
-                      )}
-                      data-testid={`book-row-${row.status.toLowerCase()}`}
-                      key={row.row_id}
-                    >
-                      <TableCell>{row.quote_event.side}</TableCell>
-                      <TableCell>{row.quote_event.quote_value}</TableCell>
-                      <TableCell>
-                        {row.quote_event.quantity}
-                        {row.quote_event.quantity_unit.toLowerCase()}
-                      </TableCell>
-                      <TableCell>{row.quote_event.broker_id}</TableCell>
-                      <TableCell>{formatTime(row.quote_event.received_timestamp)}</TableCell>
-                      <TableCell>{row.status}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+              <div className="grid grid-cols-1 gap-3 p-3 md:grid-cols-2">
+                <BookSideColumn
+                  label="BID"
+                  rows={book.rows.filter((row) => row.quote_event.side === "BID")}
+                />
+                <BookSideColumn
+                  ask
+                  label="ASK"
+                  rows={book.rows.filter((row) => row.quote_event.side === "ASK")}
+                />
+              </div>
             </Card>
           ))}
         </CardContent>
@@ -295,18 +270,65 @@ function Empty({ text }: { text: string }) {
   );
 }
 
-function Best({ label, row, ask = false }: { label: string; row: BookRow | null; ask?: boolean }) {
+function BookSideColumn({
+  label,
+  rows,
+  ask = false
+}: {
+  label: "BID" | "ASK";
+  rows: BookRow[];
+  ask?: boolean;
+}) {
   return (
     <div>
-      <div className="text-xs text-[var(--muted-foreground)]">{label}</div>
-      <div className={cn("text-2xl font-bold", ask ? "text-[var(--ask)]" : "text-[var(--bid)]")}>
-        {row ? row.quote_event.quote_value : "-"}
+      <div
+        className={cn(
+          "mb-2 flex items-center justify-between border-b border-[var(--border)] pb-1 text-xs font-semibold",
+          ask ? "text-[var(--ask)]" : "text-[var(--bid)]"
+        )}
+      >
+        <span>{label}</span>
+        <span className="text-[var(--muted-foreground)]">{rows.length}</span>
       </div>
-      <div className="text-xs text-[var(--muted-foreground)]">
-        {row
-          ? `${row.quote_event.quantity}${row.quote_event.quantity_unit.toLowerCase()} ${row.quote_event.broker_id}`
-          : "No active quote"}
+      <div className="space-y-1">
+        {rows.length === 0 ? (
+          <div className="rounded border border-dashed border-[var(--border)] px-2 py-2 text-xs text-[var(--muted-foreground)]">
+            No quotes
+          </div>
+        ) : (
+          rows.map((row) => <BookQuoteRow ask={ask} key={row.row_id} row={row} />)
+        )}
       </div>
+    </div>
+  );
+}
+
+function BookQuoteRow({ row, ask = false }: { row: BookRow; ask?: boolean }) {
+  const isActive = row.status === "ACTIVE";
+
+  return (
+    <div
+      className={cn(
+        "grid grid-cols-[64px_48px_1fr_64px] items-center gap-2 rounded border border-[var(--border)] px-2 py-1 font-mono text-xs",
+        ask ? "border-l-[var(--ask)]" : "border-l-[var(--bid)]",
+        isActive
+          ? "bg-[var(--panel-strong)] text-foreground"
+          : "bg-transparent text-[var(--muted-foreground)] opacity-50"
+      )}
+      data-testid={`book-row-${row.status.toLowerCase()}`}
+      title={row.status.toLowerCase()}
+    >
+      <span className={cn("font-semibold", ask ? "text-[var(--ask)]" : "text-[var(--bid)]")}>
+        {row.quote_event.quote_value}
+      </span>
+      <span>
+        {row.quote_event.quantity}
+        {row.quote_event.quantity_unit.toLowerCase()}
+      </span>
+      <span className="truncate">{row.quote_event.broker_id}</span>
+      <span className="text-right text-[var(--muted-foreground)]">
+        {formatTime(row.quote_event.received_timestamp)}
+      </span>
     </div>
   );
 }
