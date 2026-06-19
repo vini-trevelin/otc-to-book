@@ -1,0 +1,16 @@
+{
+  "name": "otc-to-book",
+  "version": "0.1.0",
+  "private": true,
+  "packageManager": "pnpm@11.8.0",
+  "scripts": {
+    "check:versions": "node scripts/check-exact-versions.mjs",
+    "dev": "turbo dev",
+    "lint": "turbo lint",
+    "test": "turbo test",
+    "typecheck": "turbo typecheck"
+  },
+  "devDependencies": {
+    "turbo": "2.9.18"
+  }
+}

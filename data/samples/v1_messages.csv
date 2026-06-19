@@ -1,0 +1,11 @@
+message_id,broker_id,received_timestamp,text
+sample-001,BROKER_A,2026-06-19T12:00:00Z,vendo petro27 7.30 5mm
+sample-002,BROKER_A,2026-06-19T12:00:01Z,PETR27 OFFER 7.31 SIZE 4
+sample-003,BROKER_B,2026-06-19T12:00:02Z,5mm petro27 @730
+sample-004,BROKER_C,2026-06-19T12:00:03Z,bid petro27 7.25
+sample-005,BROKER_C,2026-06-19T12:00:04Z,tomo petro27 ate 7.26
+sample-006,BROKER_A,2026-06-19T12:00:05Z,bom dia
+sample-007,BROKER_B,2026-06-19T12:00:06Z,sem mercado agora
+sample-008,BROKER_C,2026-06-19T12:00:07Z,call me
+sample-009,BROKER_A,2026-06-19T12:00:08Z,alguem tem fluxo?
+sample-010,BROKER_C,2026-06-19T12:00:09Z,bid petro27 7.27

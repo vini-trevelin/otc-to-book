@@ -6,7 +6,7 @@ Generated on 2026-06-19 for repo state: no commits yet. Execute in order unless 
 
 | Plan | Title | Priority | Effort | Depends on | Status |
 |------|-------|----------|--------|------------|--------|
-| 001 | Establish monorepo docs and tooling baseline | P1 | M | - | TODO |
+| 001 | Establish monorepo docs and tooling baseline | P1 | M | - | DONE |
 | 002 | Build backend domain pipeline | P1 | L | 001 | TODO |
 | 003 | Build realtime workstation UI | P1 | L | 001, 002 | TODO |
 | 004 | Verify V1 and polish README | P1 | M | 001, 002, 003 | TODO |

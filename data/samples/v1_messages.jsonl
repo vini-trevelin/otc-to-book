@@ -1,0 +1,10 @@
+{"message_id":"sample-001","broker_id":"BROKER_A","received_timestamp":"2026-06-19T12:00:00Z","text":"vendo petro27 7.30 5mm"}
+{"message_id":"sample-002","broker_id":"BROKER_A","received_timestamp":"2026-06-19T12:00:01Z","text":"PETR27 OFFER 7.31 SIZE 4"}
+{"message_id":"sample-003","broker_id":"BROKER_B","received_timestamp":"2026-06-19T12:00:02Z","text":"5mm petro27 @730"}
+{"message_id":"sample-004","broker_id":"BROKER_C","received_timestamp":"2026-06-19T12:00:03Z","text":"bid petro27 7.25"}
+{"message_id":"sample-005","broker_id":"BROKER_C","received_timestamp":"2026-06-19T12:00:04Z","text":"tomo petro27 ate 7.26"}
+{"message_id":"sample-006","broker_id":"BROKER_A","received_timestamp":"2026-06-19T12:00:05Z","text":"bom dia"}
+{"message_id":"sample-007","broker_id":"BROKER_B","received_timestamp":"2026-06-19T12:00:06Z","text":"sem mercado agora"}
+{"message_id":"sample-008","broker_id":"BROKER_C","received_timestamp":"2026-06-19T12:00:07Z","text":"call me"}
+{"message_id":"sample-009","broker_id":"BROKER_A","received_timestamp":"2026-06-19T12:00:08Z","text":"alguem tem fluxo?"}
+{"message_id":"sample-010","broker_id":"BROKER_C","received_timestamp":"2026-06-19T12:00:09Z","text":"bid petro27 7.27"}

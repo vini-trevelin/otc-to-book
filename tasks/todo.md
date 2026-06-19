@@ -6,7 +6,7 @@ Status values: TODO | IN PROGRESS | DONE | BLOCKED.
 
 | Order | Plan | Status | Notes |
 |-------|------|--------|-------|
-| 1 | `plans/001-repo-docs-and-tooling.md` | TODO | Establish monorepo, docs routing, exact pinning, baseline commands. |
+| 1 | `plans/001-repo-docs-and-tooling.md` | DONE | Monorepo scaffold, exact pinning, sample fixtures, lockfiles, and baseline checks established. |
 | 2 | `plans/002-api-domain-pipeline.md` | TODO | Build backend domain pipeline and tests. |
 | 3 | `plans/003-web-realtime-workstation.md` | TODO | Build Next.js workstation and E2E tests. |
 | 4 | `plans/004-verification-and-readme.md` | TODO | Full verification pass, demo media placeholders, README polish. |
