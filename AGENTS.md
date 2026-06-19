@@ -14,7 +14,6 @@ Before non-trivial work, read these files in order:
 6. `docs/tooling.md`
 7. `docs/roadmap.md`
 8. `tasks/todo.md`
-9. The specific `plans/NNN-*.md` being executed
 
 ## Operating Rules
 
@@ -25,10 +24,10 @@ Before non-trivial work, read these files in order:
 - Add or update tests for any changed logic.
 - Prefer deterministic, testable parsing in V1.
 - Preserve quant guardrails: timestamp correctness, index alignment, units, signs, deterministic behavior, diagnosable failures.
-- Commit messages follow `verb: description`, for example `docs: add v1 architecture plans`.
+- Commit messages follow `verb: description`, for example `docs: update architecture notes`.
 
 ## Documentation Ownership
 
-- Project and LLM-facing documentation belongs in `docs/`, `tasks/`, and `plans/`.
+- Project and LLM-facing documentation belongs in `docs/` and `tasks/`.
 - `README.md` is for clean public repo objective, quickstart, and demo media.
 - Do not expand `README.md` into long architecture notes; link to `docs/`.

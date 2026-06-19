@@ -21,8 +21,8 @@ Modes:
 Auto controls:
 
 - randomness meter: 1 to 5.
-- noise rate.
-- interval.
+- noise rate stepper.
+- step interval control.
 - start/stop.
 
 Chat panel should look like real broker chat: timestamp, broker, message text, status.
@@ -31,11 +31,13 @@ Chat panel should look like real broker chat: timestamp, broker, message text, s
 
 Per ticker:
 
-- Best bid and best ask at top.
-- Ladder rows below.
+- Ticker card header shows the normalized ticker and latest update timestamp.
+- Left/right side columns show `BID` and `ASK`.
+- Best active quote appears at the top of its side column.
 - Active rows visually primary.
 - Stale/superseded rows visually muted.
-- Show received timestamp and age.
+- Row content stays compact: price, size, broker, received timestamp.
+- Status is encoded by color/opacity instead of repeated text.
 
 ## Event Panel
 

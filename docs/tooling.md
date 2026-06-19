@@ -21,7 +21,7 @@ Pre-commit:
 
 - Pin hook `rev` values exactly.
 
-## Planned Tooling
+## Tooling
 
 Root:
 
@@ -53,9 +53,9 @@ Frontend:
 - shadcn/ui preset `b5de05qQC`.
 - Playwright for E2E.
 
-## Planned Root Commands
+## Root Commands
 
-Commands become authoritative after scaffold exists:
+Commands:
 
 - `pnpm install`
 - `pnpm dev`
@@ -83,6 +83,6 @@ verb: description
 
 Examples:
 
-- `docs: add v1 architecture plans`
+- `docs: update architecture notes`
 - `api: implement deterministic quote parser`
 - `web: add realtime book panel`

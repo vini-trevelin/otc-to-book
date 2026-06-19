@@ -112,7 +112,6 @@ apps/
 data/
   samples/
 docs/
-plans/
 tasks/
 ```
 

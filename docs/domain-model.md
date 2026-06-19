@@ -119,10 +119,13 @@ When a new valid quote arrives for the same active key:
 
 Display per ticker:
 
-- Best bid and best ask at top.
-- Active ladder rows sorted first.
+- One ticker card per normalized `instrument_id`.
+- Left column shows `BID` rows; right column shows `ASK` rows.
+- Best active bid/ask appears first in its side column through backend sort order.
+- Active ladder rows sort before stale rows.
 - Stale rows retained but visually muted.
-- Columns include side, price, size, broker, received timestamp, age, and status.
+- Row content is compact: price, size, broker, and received timestamp.
+- Status is encoded visually through color/opacity; do not require visible `ACTIVE`/`SUPERSEDED` text.
 
 Sorting:
 

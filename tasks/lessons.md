@@ -7,7 +7,7 @@ Record user corrections and architectural lessons here after review.
 - V1 extraction is deterministic-first behind an abstraction; LLM is future adapter.
 - WebSocket-first backend event stream is accepted.
 - Full monorepo is required.
-- Project/LLM docs belong under `docs/`, `tasks/`, and `plans/`; README stays clean/public-facing.
+- Project/LLM docs belong under `docs/` and `tasks/`; README stays clean/public-facing.
 - Exact version pinning is mandatory for every library/tool.
 - Book active key is `(broker_id, instrument_id, side)`.
 - New quote from same broker/instrument/side makes prior active quote stale for visual display.
@@ -17,3 +17,4 @@ Record user corrections and architectural lessons here after review.
 - Review correction: quote value needs explicit `quote_value_type` to support future price/spread conventions.
 - Review correction: V1 samples need expected outputs so parser evaluation can grow naturally later.
 - Review correction: commit messages follow `verb: description`.
+- Completed implementation plans should be removed once their durable decisions are represented in `docs/` and `tasks/`.
