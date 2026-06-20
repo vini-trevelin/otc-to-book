@@ -29,6 +29,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 import { Separator } from "@/components/ui/separator";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Slider } from "@/components/ui/slider";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import type { BookRow, ClientEvent } from "@/lib/events";
@@ -47,6 +48,7 @@ export default function WorkstationPage() {
   const [noiseRate, setNoiseRate] = useState(0.2);
   const [intervalMs, setIntervalMs] = useState(1000);
   const [uploadStatus, setUploadStatus] = useState<string>("");
+  const [uploadError, setUploadError] = useState<string>("");
   const [leftOpen, setLeftOpen] = useState(true);
   const [rightOpen, setRightOpen] = useState(false);
   const [connectOpen, setConnectOpen] = useState(false);
@@ -110,13 +112,23 @@ export default function WorkstationPage() {
 
   async function uploadSample(file: File | null) {
     if (!file) return;
+    setUploadStatus("");
+    setUploadError("");
     const formData = new FormData();
     formData.append("file", file);
-    const response = await fetch(`${HTTP_URL}/samples/replay`, {
-      method: "POST",
-      body: formData
-    });
-    setUploadStatus(response.ok ? "Replay uploaded" : "Replay failed");
+    try {
+      const response = await fetch(`${HTTP_URL}/samples/replay`, {
+        method: "POST",
+        body: formData
+      });
+      if (response.ok) {
+        setUploadStatus("Replay uploaded");
+        return;
+      }
+      setUploadError("Replay failed. Check file type/schema, then retry.");
+    } catch {
+      setUploadError("Replay failed. API unavailable; verify backend on port 8000.");
+    }
   }
 
   return (
@@ -146,19 +158,20 @@ export default function WorkstationPage() {
                 </Button>
               }
               status={state.connection}
-              title="Broker Chat"
+              statusHelp={
+                isConnected ? null : "Backend stream unavailable. Check the API WebSocket and retry."
+              }
+              title="Broker Input"
             />
 
-            <CardContent className="flex min-h-0 flex-1 flex-col space-y-2 p-3">
+            <CardContent className="flex min-h-0 flex-1 flex-col space-y-1.5 p-3">
               <SidebarSection
                 description="Reserve space for real broker chat integrations."
                 onToggle={() => setConnectOpen((value) => !value)}
                 open={connectOpen}
                 title="Connect"
               >
-                <div className="rounded-md border border-dashed border-[var(--border)] p-3 text-xs text-[var(--muted-foreground)]">
-                  Live chat connectors will land here.
-                </div>
+                <ConnectPlaceholder />
               </SidebarSection>
 
               <SidebarSection
@@ -167,7 +180,7 @@ export default function WorkstationPage() {
                 open={simulateOpen}
                 title="Simulate"
               >
-                <div className="space-y-3">
+                <div className="space-y-2.5">
                   <Label className="block text-xs">
                     Random
                     <Slider
@@ -203,7 +216,7 @@ export default function WorkstationPage() {
                       "w-full gap-2",
                       state.simulatorRunning
                         ? "border-zinc-700 text-zinc-100 hover:bg-zinc-800"
-                        : "bg-emerald-500 text-black hover:bg-emerald-400"
+                        : "border border-[var(--border)] bg-[var(--panel-strong)] text-foreground hover:bg-zinc-800"
                     )}
                     type="button"
                     onClick={toggleSimulator}
@@ -222,7 +235,7 @@ export default function WorkstationPage() {
                 open={insertOpen}
                 title="Insert"
               >
-                <form className="space-y-2.5" onSubmit={sendMessage}>
+                <form className="space-y-2" onSubmit={sendMessage}>
                   <div className="grid grid-cols-[1fr_104px] gap-2">
                     <Input
                       className="h-8 bg-black text-xs"
@@ -244,10 +257,10 @@ export default function WorkstationPage() {
                   <Button className="gap-2" type="submit" variant="secondary" disabled={!isConnected}>
                     <Send size={16} /> Send
                   </Button>
-                  <Label className="block text-xs text-[var(--muted-foreground)]">
-                    Replay JSON/CSV
+                  <Label className="block text-[11px] text-[var(--muted-foreground)]">
+                    Replay fixture
                     <Input
-                      className="mt-2 block h-8 w-full text-xs"
+                      className="mt-1.5 block h-7 w-full text-[11px]"
                       type="file"
                       accept=".csv,.json,.jsonl"
                       onChange={(event) => void uploadSample(event.target.files?.[0] ?? null)}
@@ -255,6 +268,11 @@ export default function WorkstationPage() {
                   </Label>
                   {uploadStatus ? (
                     <p className="text-xs text-[var(--muted-foreground)]">{uploadStatus}</p>
+                  ) : null}
+                  {uploadError ? (
+                    <p role="alert" className="text-xs text-[var(--warning)]">
+                      {uploadError}
+                    </p>
                   ) : null}
                 </form>
               </SidebarSection>
@@ -266,7 +284,17 @@ export default function WorkstationPage() {
                 />
                 <div className="mt-2 min-h-0 flex-1 overflow-auto">
                   {state.messages.length === 0 ? (
-                    <Empty className="h-full min-h-28" text="No messages yet" />
+                    <EmptyWithSkeleton
+                      className="h-full min-h-28"
+                      text="No raw messages yet. Send or simulate broker flow to populate this feed."
+                    >
+                      <div aria-hidden="true" className="space-y-2">
+                        <Skeleton className="h-3 w-24 bg-muted/55" />
+                        <Skeleton className="h-4 w-full bg-muted/40" />
+                        <Skeleton className="h-3 w-20 bg-muted/45" />
+                        <Skeleton className="h-4 w-4/5 bg-muted/35" />
+                      </div>
+                    </EmptyWithSkeleton>
                   ) : (
                     state.messages.map((item) => (
                       <Card className="mb-2 gap-1 rounded-md py-2 text-sm" key={item.message_id}>
@@ -294,7 +322,7 @@ export default function WorkstationPage() {
 
       <section className="min-w-0">
         <div className="grid gap-3 [grid-template-columns:repeat(auto-fit,minmax(360px,1fr))] max-[430px]:[grid-template-columns:1fr]">
-          {books.length === 0 ? <Empty text="Book empty" /> : null}
+          {books.length === 0 ? <BookEmptyState /> : null}
           {books.map((book) => (
             <Card className="gap-0 rounded-md py-0" key={book.instrument_id}>
               <div className="flex items-center justify-between border-b border-[var(--border)] bg-[var(--panel-strong)] p-3">
@@ -340,7 +368,15 @@ export default function WorkstationPage() {
               title="Parsed Events"
             />
             <CardContent className="max-h-[88vh] overflow-auto p-3">
-              {state.events.length === 0 ? <Empty text="No parsed events yet" /> : null}
+              {state.events.length === 0 ? (
+                <EmptyWithSkeleton text="No parsed events yet. Open this feed after sending or simulating messages to inspect extraction output.">
+                  <div aria-hidden="true" className="space-y-2">
+                    <Skeleton className="h-3 w-28 bg-muted/55" />
+                    <Skeleton className="h-3 w-full bg-muted/35" />
+                    <Skeleton className="h-3 w-4/5 bg-muted/35" />
+                  </div>
+                </EmptyWithSkeleton>
+              ) : null}
               {state.events.map((event) => (
                 <Card className="mb-2 gap-1 rounded-md py-2 text-xs" key={event.event_id}>
                   <div className="mb-1 flex justify-between">
@@ -367,19 +403,26 @@ export default function WorkstationPage() {
 function PanelHeader({
   title,
   status,
+  statusHelp,
   action
 }: {
   title: string;
   status: string;
+  statusHelp?: string | null;
   action?: ReactNode;
 }) {
   return (
-    <CardHeader className="flex flex-row items-center justify-between border-b border-[var(--border)] p-3">
+    <CardHeader className="flex flex-row items-center justify-between border-b border-[var(--border)] px-3 py-2.5">
       <div>
-        <h1 className="text-sm font-semibold uppercase tracking-wide">{title}</h1>
+        <h1 className="text-xs font-semibold uppercase tracking-wide">{title}</h1>
         <Badge className="mt-1" variant="outline">
           {status}
         </Badge>
+        {statusHelp ? (
+          <p role="status" className="mt-1 max-w-60 text-[11px] leading-snug text-[var(--warning)]">
+            {statusHelp}
+          </p>
+        ) : null}
       </div>
       {action}
     </CardHeader>
@@ -445,7 +488,7 @@ function SidebarSection({
   children: ReactNode;
 }) {
   return (
-    <section className="border-b border-[var(--border)] pb-2 last:border-b-0 last:pb-0">
+    <section className="border-b border-[var(--border)] pb-1.5 last:border-b-0 last:pb-0">
       <div className="grid grid-cols-[1fr_auto] gap-2">
         <SectionHeading description={description} title={title} />
         <Button
@@ -463,7 +506,7 @@ function SidebarSection({
           />
         </Button>
       </div>
-      {open ? <div className="mt-2">{children}</div> : null}
+      {open ? <div className="mt-1.5">{children}</div> : null}
     </section>
   );
 }
@@ -480,7 +523,7 @@ function SectionHeading({
       <Tooltip>
         <TooltipTrigger
           render={<h2 />}
-          className="cursor-help text-xs font-semibold uppercase tracking-wide"
+          className="cursor-help text-xs font-semibold uppercase tracking-wide decoration-dotted underline-offset-4 hover:underline focus-visible:underline"
         >
           {title}
         </TooltipTrigger>
@@ -490,11 +533,84 @@ function SectionHeading({
   );
 }
 
-function Empty({ text, className }: { text: string; className?: string }) {
+function ConnectPlaceholder() {
   return (
-    <Card className={cn("rounded-md border-dashed p-4 text-sm text-[var(--muted-foreground)]", className)}>
-      {text}
-    </Card>
+    <div className="rounded-md border border-dashed border-[var(--border)] px-2.5 py-2">
+      <div className="mb-2 text-xs text-[var(--muted-foreground)]">
+        Live chat connectors will land here.
+      </div>
+      <div aria-hidden="true" className="space-y-1.5">
+        <Skeleton className="h-3 w-3/4 bg-muted/60" />
+        <Skeleton className="h-3 w-1/2 bg-muted/45" />
+      </div>
+    </div>
+  );
+}
+
+function EmptyWithSkeleton({
+  text,
+  className,
+  children
+}: {
+  text: string;
+  className?: string;
+  children?: ReactNode;
+}) {
+  return (
+    <div
+      className={cn(
+        "rounded-md border border-dashed border-[var(--border)] p-4 text-sm text-[var(--muted-foreground)]",
+        className
+      )}
+    >
+      <div>{text}</div>
+      {children ? <div className="mt-3">{children}</div> : null}
+    </div>
+  );
+}
+
+function BookEmptyState() {
+  return (
+    <div className="rounded-md border border-dashed border-[var(--border)] bg-[var(--panel)] p-4 text-sm text-[var(--muted-foreground)]">
+      <div className="text-foreground">Book empty</div>
+      <div className="mt-1 max-w-xl text-xs">
+        Send a broker message or start simulation to build the book. The flow is raw message,
+        parsed event, then active bid/ask row.
+      </div>
+      <div aria-hidden="true" className="mt-3 grid gap-3 sm:grid-cols-2">
+        <BookCardSkeleton />
+        <BookCardSkeleton />
+      </div>
+    </div>
+  );
+}
+
+function BookCardSkeleton() {
+  return (
+    <div className="rounded-md border border-[var(--border)] bg-[var(--panel-strong)] p-3">
+      <div className="flex items-center justify-between gap-3">
+        <Skeleton className="h-4 w-20 bg-muted/70" />
+        <Skeleton className="h-3 w-24 bg-muted/45" />
+      </div>
+      <div className="mt-4 grid grid-cols-2 gap-3">
+        <div className="space-y-2">
+          <div className="flex justify-between">
+            <Skeleton className="h-3 w-9 bg-[color-mix(in_oklch,var(--bid),transparent_72%)]" />
+            <Skeleton className="h-3 w-5 bg-muted/45" />
+          </div>
+          <Skeleton className="h-9 w-full bg-[color-mix(in_oklch,var(--bid),transparent_86%)]" />
+          <Skeleton className="h-9 w-full bg-[color-mix(in_oklch,var(--bid),transparent_91%)]" />
+        </div>
+        <div className="space-y-2">
+          <div className="flex justify-between">
+            <Skeleton className="h-3 w-9 bg-[color-mix(in_oklch,var(--ask),transparent_72%)]" />
+            <Skeleton className="h-3 w-5 bg-muted/45" />
+          </div>
+          <Skeleton className="h-9 w-full bg-[color-mix(in_oklch,var(--ask),transparent_86%)]" />
+          <Skeleton className="h-9 w-full bg-[color-mix(in_oklch,var(--ask),transparent_91%)]" />
+        </div>
+      </div>
+    </div>
   );
 }
 

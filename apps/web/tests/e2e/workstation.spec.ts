@@ -9,7 +9,7 @@ async function expandParsedEvents(page: Page) {
 test("user message updates chat, event feed, and book", async ({ page }) => {
   await page.goto("/");
 
-  await expect(page.getByRole("heading", { name: "Broker Chat" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Broker Input" })).toBeVisible();
   await expect(page.getByText("connected")).toBeVisible();
   await page.getByLabel("Message").fill("vendo petro27 7.30 5mm");
   await page.getByRole("button", { name: "Send" }).click();
@@ -24,7 +24,8 @@ test("user message updates chat, event feed, and book", async ({ page }) => {
 test("side panels expose the book-first shell controls", async ({ page }) => {
   await page.goto("/");
 
-  await expect(page.getByRole("heading", { name: "Broker Chat" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Broker Input" })).toBeVisible();
+  await expect(page.getByText("Send a broker message or start simulation")).toBeVisible();
   await expect(page.getByText("Parsed Events")).toBeHidden();
   await expect(page.getByRole("heading", { name: "Connect" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Simulate" })).toBeVisible();
@@ -34,11 +35,11 @@ test("side panels expose the book-first shell controls", async ({ page }) => {
   await expect(page.getByText("Generate broker flow with controlled noise.")).toBeVisible();
 
   await page.getByRole("button", { name: "Collapse broker chat" }).click();
-  await expect(page.getByRole("heading", { name: "Broker Chat" })).toBeHidden();
+  await expect(page.getByRole("heading", { name: "Broker Input" })).toBeHidden();
   await expect(page.getByRole("button", { name: "Expand broker chat" })).toBeVisible();
 
   await page.getByRole("button", { name: "Expand broker chat" }).click();
-  await expect(page.getByRole("heading", { name: "Broker Chat" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Broker Input" })).toBeVisible();
 });
 
 test("replacement quote mutes superseded row", async ({ page }) => {
