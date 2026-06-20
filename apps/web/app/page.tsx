@@ -149,7 +149,7 @@ export default function WorkstationPage() {
               title="Broker Chat"
             />
 
-            <CardContent className="space-y-2 p-3">
+            <CardContent className="flex min-h-0 flex-1 flex-col space-y-2 p-3">
               <SidebarSection
                 description="Reserve space for real broker chat integrations."
                 onToggle={() => setConnectOpen((value) => !value)}
@@ -259,14 +259,14 @@ export default function WorkstationPage() {
                 </form>
               </SidebarSection>
 
-              <div>
+              <div className="flex min-h-0 flex-1 flex-col">
                 <SectionHeading
                   description="Latest accepted raw messages."
                   title="Chat"
                 />
-                <div className="mt-2 max-h-[40vh] overflow-auto">
+                <div className="mt-2 min-h-0 flex-1 overflow-auto">
                   {state.messages.length === 0 ? (
-                    <Empty text="No messages yet" />
+                    <Empty className="h-full min-h-28" text="No messages yet" />
                   ) : (
                     state.messages.map((item) => (
                       <Card className="mb-2 gap-1 rounded-md py-2 text-sm" key={item.message_id}>
@@ -490,9 +490,9 @@ function SectionHeading({
   );
 }
 
-function Empty({ text }: { text: string }) {
+function Empty({ text, className }: { text: string; className?: string }) {
   return (
-    <Card className="rounded-md border-dashed p-4 text-sm text-[var(--muted-foreground)]">
+    <Card className={cn("rounded-md border-dashed p-4 text-sm text-[var(--muted-foreground)]", className)}>
       {text}
     </Card>
   );
