@@ -4,7 +4,6 @@ import {
   Activity,
   ChevronLeft,
   ChevronRight,
-  CircleHelp,
   MessageSquare,
   Minus,
   Play,
@@ -483,17 +482,8 @@ function SectionHeading({
 }) {
   return (
     <div>
-      <div className="flex items-center gap-1.5">
-        <h2 className="text-xs font-semibold uppercase tracking-wide">{title}</h2>
-        <CircleHelp
-          aria-label={`${title} help`}
-          className="size-3 text-[var(--muted-foreground)]"
-          role="img"
-        >
-          <title>{help}</title>
-        </CircleHelp>
-      </div>
-      <p className="mt-0.5 text-[11px] leading-snug text-[var(--muted-foreground)]">
+      <h2 className="text-xs font-semibold uppercase tracking-wide">{title}</h2>
+      <p className="mt-0.5 cursor-help text-[11px] leading-snug text-[var(--muted-foreground)]" title={help}>
         {description}
       </p>
     </div>
