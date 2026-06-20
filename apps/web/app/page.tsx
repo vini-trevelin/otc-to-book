@@ -403,7 +403,7 @@ function BookSideColumn({
         <span>{label}</span>
         <span className="text-[var(--muted-foreground)]">{rows.length}</span>
       </div>
-      <div className="max-h-[11.75rem] space-y-1 overflow-y-auto pr-1">
+      <div className="max-h-[11.75rem] space-y-1 overflow-y-auto pr-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {rows.length === 0 ? (
           <div className="rounded border border-dashed border-[var(--border)] px-2 py-2 text-xs text-[var(--muted-foreground)]">
             No quotes
