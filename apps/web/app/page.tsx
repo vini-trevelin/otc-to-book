@@ -4,6 +4,7 @@ import {
   Activity,
   ChevronLeft,
   ChevronRight,
+  CircleHelp,
   MessageSquare,
   Minus,
   Play,
@@ -48,6 +49,9 @@ export default function WorkstationPage() {
   const [uploadStatus, setUploadStatus] = useState<string>("");
   const [leftOpen, setLeftOpen] = useState(true);
   const [rightOpen, setRightOpen] = useState(false);
+  const [connectOpen, setConnectOpen] = useState(false);
+  const [simulateOpen, setSimulateOpen] = useState(true);
+  const [insertOpen, setInsertOpen] = useState(true);
 
   useEffect(() => {
     dispatch({ type: "connection", connection: "connecting" });
@@ -96,6 +100,14 @@ export default function WorkstationPage() {
     sendClientEvent({ event_type: "simulator_stop", payload: {} });
   }
 
+  function toggleSimulator() {
+    if (state.simulatorRunning) {
+      stopSimulator();
+    } else {
+      startSimulator();
+    }
+  }
+
   async function uploadSample(file: File | null) {
     if (!file) return;
     const formData = new FormData();
@@ -110,8 +122,8 @@ export default function WorkstationPage() {
   return (
     <main
       className={cn(
-        "grid min-h-screen grid-cols-1 gap-3 overflow-x-hidden bg-background p-3 text-foreground transition-[grid-template-columns] duration-200 ease-out lg:grid-cols-[minmax(300px,340px)_minmax(0,1fr)_44px]",
-        !leftOpen && "lg:grid-cols-[44px_minmax(0,1fr)_44px]",
+        "relative grid min-h-screen grid-cols-1 gap-3 overflow-x-hidden bg-background p-3 text-foreground transition-[grid-template-columns] duration-200 ease-out lg:grid-cols-[minmax(300px,340px)_minmax(0,1fr)]",
+        !leftOpen && "lg:grid-cols-[44px_minmax(0,1fr)]",
         rightOpen &&
           "lg:grid-cols-[minmax(300px,340px)_minmax(0,1fr)_minmax(320px,380px)]",
         !leftOpen && rightOpen && "lg:grid-cols-[44px_minmax(0,1fr)_minmax(320px,380px)]"
@@ -135,109 +147,143 @@ export default function WorkstationPage() {
               status={state.connection}
               title="Broker Chat"
             />
-            <form className="space-y-2.5 p-3" onSubmit={sendMessage}>
-              <div className="grid grid-cols-[1fr_106px] gap-2">
-                <Input
-                  className="h-9 bg-black text-sm"
-                  value={message}
-                  onChange={(event) => setMessage(event.target.value)}
-                  aria-label="Message"
-                />
-                <NativeSelect
-                  className="w-full"
-                  value={brokerId}
-                  onChange={(event) => setBrokerId(event.target.value)}
-                  aria-label="Broker"
-                >
-                  <NativeSelectOption>BROKER_A</NativeSelectOption>
-                  <NativeSelectOption>BROKER_B</NativeSelectOption>
-                  <NativeSelectOption>BROKER_C</NativeSelectOption>
-                </NativeSelect>
-              </div>
-              <Button className="gap-2" type="submit" variant="secondary" disabled={!isConnected}>
-                <Send size={16} /> Send
-              </Button>
-            </form>
 
-            <Separator />
-            <CardContent className="space-y-3 p-3">
-              <div className="grid grid-cols-1 gap-3 text-xs sm:grid-cols-[1fr_88px_110px] lg:grid-cols-1 xl:grid-cols-[1fr_88px_110px]">
-                <Label className="block">
-                  Random
-                  <Slider
-                    className="mt-3"
-                    min={1}
-                    max={5}
-                    value={[randomness]}
-                    onValueChange={(value) =>
-                      setRandomness(Array.isArray(value) ? (value[0] ?? 3) : value)
-                    }
-                  />
-                </Label>
-                <NumberStepper
-                  label="Noise"
-                  max={1}
-                  min={0}
-                  onChange={setNoiseRate}
-                  step={0.1}
-                  value={noiseRate}
+            <CardContent className="space-y-2 p-3">
+              <SidebarSection
+                description="Reserve space for real broker chat integrations."
+                help="Future adapter for live chat sources; no connection side effects in V1."
+                onToggle={() => setConnectOpen((value) => !value)}
+                open={connectOpen}
+                title="Connect"
+              >
+                <div className="rounded-md border border-dashed border-[var(--border)] p-3 text-xs text-[var(--muted-foreground)]">
+                  Live chat connectors will land here.
+                </div>
+              </SidebarSection>
+
+              <SidebarSection
+                description="Generate broker flow with controlled noise."
+                help="Random controls ticker/template variation. Noise controls non-quote messages. Step is the simulator interval in milliseconds."
+                onToggle={() => setSimulateOpen((value) => !value)}
+                open={simulateOpen}
+                title="Simulate"
+              >
+                <div className="space-y-3">
+                  <Label className="block text-xs">
+                    Random
+                    <Slider
+                      className="mt-2"
+                      min={1}
+                      max={5}
+                      value={[randomness]}
+                      onValueChange={(value) =>
+                        setRandomness(Array.isArray(value) ? (value[0] ?? 3) : value)
+                      }
+                    />
+                  </Label>
+                  <div className="grid grid-cols-2 gap-2">
+                    <NumberStepper
+                      label="Noise"
+                      max={1}
+                      min={0}
+                      onChange={setNoiseRate}
+                      step={0.1}
+                      value={noiseRate}
+                    />
+                    <NumberStepper
+                      label="Step"
+                      min={250}
+                      onChange={setIntervalMs}
+                      step={250}
+                      suffix="ms"
+                      value={intervalMs}
+                    />
+                  </div>
+                  <Button
+                    className={cn(
+                      "w-full gap-2",
+                      state.simulatorRunning
+                        ? "border-zinc-700 text-zinc-100 hover:bg-zinc-800"
+                        : "bg-emerald-500 text-black hover:bg-emerald-400"
+                    )}
+                    type="button"
+                    onClick={toggleSimulator}
+                    disabled={!isConnected}
+                    variant={state.simulatorRunning ? "outline" : "default"}
+                  >
+                    {state.simulatorRunning ? <Square size={16} /> : <Play size={16} />}
+                    {state.simulatorRunning ? "Stop simulation" : "Start simulation"}
+                  </Button>
+                </div>
+              </SidebarSection>
+
+              <SidebarSection
+                description="Insert manual messages or replay fixtures."
+                help="Manual inserts use the selected broker and current UTC receive timestamp."
+                onToggle={() => setInsertOpen((value) => !value)}
+                open={insertOpen}
+                title="Insert"
+              >
+                <form className="space-y-2.5" onSubmit={sendMessage}>
+                  <div className="grid grid-cols-[1fr_104px] gap-2">
+                    <Input
+                      className="h-8 bg-black text-xs"
+                      value={message}
+                      onChange={(event) => setMessage(event.target.value)}
+                      aria-label="Message"
+                    />
+                    <NativeSelect
+                      className="w-full"
+                      value={brokerId}
+                      onChange={(event) => setBrokerId(event.target.value)}
+                      aria-label="Broker"
+                    >
+                      <NativeSelectOption>BROKER_A</NativeSelectOption>
+                      <NativeSelectOption>BROKER_B</NativeSelectOption>
+                      <NativeSelectOption>BROKER_C</NativeSelectOption>
+                    </NativeSelect>
+                  </div>
+                  <Button className="gap-2" type="submit" variant="secondary" disabled={!isConnected}>
+                    <Send size={16} /> Send
+                  </Button>
+                  <Label className="block text-xs text-[var(--muted-foreground)]">
+                    Replay JSON/CSV
+                    <Input
+                      className="mt-2 block h-8 w-full text-xs"
+                      type="file"
+                      accept=".csv,.json,.jsonl"
+                      onChange={(event) => void uploadSample(event.target.files?.[0] ?? null)}
+                    />
+                  </Label>
+                  {uploadStatus ? (
+                    <p className="text-xs text-[var(--muted-foreground)]">{uploadStatus}</p>
+                  ) : null}
+                </form>
+              </SidebarSection>
+
+              <div>
+                <SectionHeading
+                  description="Latest accepted raw messages."
+                  help="Chat feed is a compact audit trail of raw inputs received by the API."
+                  title="Chat"
                 />
-                <NumberStepper
-                  label="Step"
-                  min={250}
-                  onChange={setIntervalMs}
-                  step={250}
-                  value={intervalMs}
-                />
+                <div className="mt-2 max-h-[40vh] overflow-auto">
+                  {state.messages.length === 0 ? (
+                    <Empty text="No messages yet" />
+                  ) : (
+                    state.messages.map((item) => (
+                      <Card className="mb-2 gap-1 rounded-md py-2 text-sm" key={item.message_id}>
+                        <div className="mb-1 flex justify-between gap-2 text-xs text-[var(--muted-foreground)]">
+                          <span>{item.broker_id}</span>
+                          <span>{formatTime(item.received_timestamp)}</span>
+                        </div>
+                        <div>{item.text}</div>
+                      </Card>
+                    ))
+                  )}
+                </div>
               </div>
-              <div className="grid grid-cols-2 gap-2">
-                <Button
-                  className="gap-2 bg-emerald-500 text-black hover:bg-emerald-400"
-                  type="button"
-                  onClick={startSimulator}
-                  disabled={!isConnected}
-                >
-                  <Play size={16} /> Start
-                </Button>
-                <Button
-                  className="gap-2 border-zinc-700 text-zinc-100 hover:bg-zinc-800"
-                  variant="outline"
-                  type="button"
-                  onClick={stopSimulator}
-                >
-                  <Square size={16} /> Stop
-                </Button>
-              </div>
-              <Label className="block text-xs text-[var(--muted-foreground)]">
-                Replay JSON/CSV
-                <Input
-                  className="mt-2 block w-full text-xs"
-                  type="file"
-                  accept=".csv,.json,.jsonl"
-                  onChange={(event) => void uploadSample(event.target.files?.[0] ?? null)}
-                />
-              </Label>
-              {uploadStatus ? (
-                <p className="text-xs text-[var(--muted-foreground)]">{uploadStatus}</p>
-              ) : null}
             </CardContent>
-
-            <Separator />
-            <div className="max-h-[48vh] overflow-auto p-3">
-              {state.messages.length === 0 ? (
-                <Empty text="No messages yet" />
-              ) : (
-                state.messages.map((item) => (
-                  <Card className="mb-2 gap-1 rounded-md py-2 text-sm" key={item.message_id}>
-                    <div className="mb-1 flex justify-between gap-2 text-xs text-[var(--muted-foreground)]">
-                      <span>{item.broker_id}</span>
-                      <span>{formatTime(item.received_timestamp)}</span>
-                    </div>
-                    <div>{item.text}</div>
-                  </Card>
-                ))
-              )}
-            </div>
           </Card>
         ) : (
           <SidebarIndicator
@@ -278,8 +324,8 @@ export default function WorkstationPage() {
         </div>
       </section>
 
-      <aside className="min-w-0">
-        {rightOpen ? (
+      {rightOpen ? (
+        <aside className="min-w-0">
           <Card className="h-full gap-0 rounded-md bg-[var(--panel)] py-0">
             <PanelHeader
               action={
@@ -312,15 +358,10 @@ export default function WorkstationPage() {
               ))}
             </CardContent>
           </Card>
-        ) : (
-          <SidebarIndicator
-            ariaLabel="Expand parsed events"
-            icon={<Activity size={16} />}
-            onClick={() => setRightOpen(true)}
-            status={`seq ${state.lastSequence}`}
-          />
-        )}
-      </aside>
+        </aside>
+      ) : (
+        <RightEdgeIndicator onClick={() => setRightOpen(true)} status={`seq ${state.lastSequence}`} />
+      )}
     </main>
   );
 }
@@ -371,6 +412,90 @@ function SidebarIndicator({
         {icon}
         <span className="absolute right-1 top-1 size-1.5 rounded-full bg-[var(--muted-foreground)]" />
       </Button>
+    </div>
+  );
+}
+
+function RightEdgeIndicator({ status, onClick }: { status: string; onClick: () => void }) {
+  return (
+    <div className="group fixed right-0 top-3 z-20 flex h-12 w-3 items-center justify-end">
+      <Button
+        aria-label="Expand parsed events"
+        className="mr-1 size-9 translate-x-2 rounded-md border border-[var(--border)] bg-[var(--panel)] text-[var(--muted-foreground)] opacity-0 transition-[opacity,transform] duration-150 hover:bg-[var(--panel-strong)] hover:text-foreground group-hover:translate-x-0 group-hover:opacity-100 focus-visible:translate-x-0 focus-visible:opacity-100"
+        onClick={onClick}
+        title={`Expand parsed events: ${status}`}
+        type="button"
+        variant="ghost"
+      >
+        <Activity size={16} />
+      </Button>
+    </div>
+  );
+}
+
+function SidebarSection({
+  title,
+  description,
+  help,
+  open,
+  onToggle,
+  children
+}: {
+  title: string;
+  description: string;
+  help: string;
+  open: boolean;
+  onToggle: () => void;
+  children: ReactNode;
+}) {
+  return (
+    <section className="border-b border-[var(--border)] pb-2 last:border-b-0 last:pb-0">
+      <div className="grid grid-cols-[1fr_auto] gap-2">
+        <SectionHeading description={description} help={help} title={title} />
+        <Button
+          aria-expanded={open}
+          aria-label={`${open ? "Collapse" : "Expand"} ${title}`}
+          className="mt-0.5"
+          onClick={onToggle}
+          size="icon-sm"
+          type="button"
+          variant="ghost"
+        >
+          <ChevronRight
+            className={cn("transition-transform duration-150", open && "rotate-90")}
+            size={14}
+          />
+        </Button>
+      </div>
+      {open ? <div className="mt-2">{children}</div> : null}
+    </section>
+  );
+}
+
+function SectionHeading({
+  title,
+  description,
+  help
+}: {
+  title: string;
+  description: string;
+  help: string;
+}) {
+  return (
+    <div>
+      <div className="flex items-center gap-1.5">
+        <h2 className="text-xs font-semibold uppercase tracking-wide">{title}</h2>
+        <CircleHelp
+          aria-label={`${title} help`}
+          className="size-3 text-[var(--muted-foreground)]"
+          role="img"
+        >
+          <title>{help}</title>
+        </CircleHelp>
+      </div>
+      <p className="mt-0.5 text-[11px] leading-snug text-[var(--muted-foreground)]">
+        {description}
+      </p>
     </div>
   );
 }
@@ -458,6 +583,7 @@ function NumberStepper({
   min,
   max,
   step,
+  suffix,
   onChange
 }: {
   label: string;
@@ -465,6 +591,7 @@ function NumberStepper({
   min: number;
   max?: number;
   step: number;
+  suffix?: string;
   onChange: (value: number) => void;
 }) {
   const id = useId();
@@ -482,7 +609,7 @@ function NumberStepper({
   return (
     <div>
       <Label className="block" htmlFor={id}>
-        {label}
+        {suffix ? `${label} (${suffix})` : label}
       </Label>
       <div className="mt-1 grid grid-cols-[22px_minmax(38px,1fr)_22px] gap-1">
         <Button
@@ -496,7 +623,7 @@ function NumberStepper({
           <Minus size={12} />
         </Button>
         <Input
-          aria-label={label}
+          aria-label={suffix ? `${label} (${suffix})` : label}
           className="h-7 bg-black px-1 text-center font-mono text-[11px]"
           id={id}
           inputMode={decimals > 0 ? "decimal" : "numeric"}

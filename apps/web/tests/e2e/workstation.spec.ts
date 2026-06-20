@@ -1,16 +1,21 @@
-import { expect, test } from "@playwright/test";
+import { expect, type Page, test } from "@playwright/test";
+
+async function expandParsedEvents(page: Page) {
+  const viewport = page.viewportSize() ?? { width: 1280, height: 720 };
+  await page.mouse.move(viewport.width - 2, 36);
+  await page.getByRole("button", { name: "Expand parsed events" }).click();
+}
 
 test("user message updates chat, event feed, and book", async ({ page }) => {
   await page.goto("/");
 
-  await expect(page.getByText("Broker Chat")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Broker Chat" })).toBeVisible();
   await expect(page.getByText("connected")).toBeVisible();
   await page.getByLabel("Message").fill("vendo petro27 7.30 5mm");
   await page.getByRole("button", { name: "Send" }).click();
 
   await expect(page.getByText("vendo petro27 7.30 5mm").first()).toBeVisible();
-  await expect(page.getByRole("button", { name: "Expand parsed events" })).toBeVisible();
-  await page.getByRole("button", { name: "Expand parsed events" }).click();
+  await expandParsedEvents(page);
   await expect(page.getByText("quote_event").first()).toBeVisible();
   await expect(page.getByText("PETRO27").first()).toBeVisible();
   await expect(page.getByText("7.30").first()).toBeVisible();
@@ -19,16 +24,19 @@ test("user message updates chat, event feed, and book", async ({ page }) => {
 test("side panels expose the book-first shell controls", async ({ page }) => {
   await page.goto("/");
 
-  await expect(page.getByText("Broker Chat")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Broker Chat" })).toBeVisible();
   await expect(page.getByText("Parsed Events")).toBeHidden();
-  await expect(page.getByRole("button", { name: "Expand parsed events" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Connect" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Simulate" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Insert" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Chat", exact: true })).toBeVisible();
 
   await page.getByRole("button", { name: "Collapse broker chat" }).click();
-  await expect(page.getByText("Broker Chat")).toBeHidden();
+  await expect(page.getByRole("heading", { name: "Broker Chat" })).toBeHidden();
   await expect(page.getByRole("button", { name: "Expand broker chat" })).toBeVisible();
 
   await page.getByRole("button", { name: "Expand broker chat" }).click();
-  await expect(page.getByText("Broker Chat")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Broker Chat" })).toBeVisible();
 });
 
 test("replacement quote mutes superseded row", async ({ page }) => {
@@ -55,8 +63,8 @@ test("auto simulator starts", async ({ page }) => {
   await page.goto("/");
 
   await expect(page.getByText("connected")).toBeVisible();
-  await page.getByRole("button", { name: "Expand parsed events" }).click();
-  await page.getByRole("button", { name: "Start" }).click();
+  await expandParsedEvents(page);
+  await page.getByRole("button", { name: "Start simulation" }).click();
 
   await expect(page.getByText(/message_received|quote_/).first()).toBeVisible({ timeout: 5000 });
 });
