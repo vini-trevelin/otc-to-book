@@ -403,7 +403,7 @@ function BookSideColumn({
         <span>{label}</span>
         <span className="text-[var(--muted-foreground)]">{rows.length}</span>
       </div>
-      <div className="space-y-1">
+      <div className="max-h-[11.75rem] space-y-1 overflow-y-auto pr-1">
         {rows.length === 0 ? (
           <div className="rounded border border-dashed border-[var(--border)] px-2 py-2 text-xs text-[var(--muted-foreground)]">
             No quotes
@@ -422,7 +422,7 @@ function BookQuoteRow({ row, ask = false }: { row: BookRow; ask?: boolean }) {
   return (
     <div
       className={cn(
-        "grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 rounded border border-[var(--border)] px-2 py-1 font-mono text-xs",
+        "grid min-h-10 gap-1 rounded border border-[var(--border)] px-2 py-1 font-mono text-xs",
         ask
           ? "bg-[color-mix(in_oklch,var(--ask),transparent_90%)]"
           : "bg-[color-mix(in_oklch,var(--bid),transparent_90%)]",
@@ -435,13 +435,19 @@ function BookQuoteRow({ row, ask = false }: { row: BookRow; ask?: boolean }) {
         row.quote_event.received_timestamp
       )}`}
     >
-      <span className={cn("font-semibold", ask ? "text-[var(--ask)]" : "text-[var(--bid)]")}>
-        {row.quote_event.quote_value}
-      </span>
-      <span className="text-right text-[var(--muted-foreground)]">
-        {row.quote_event.quantity}
-        {row.quote_event.quantity_unit.toLowerCase()}
-      </span>
+      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2">
+        <span className={cn("font-semibold", ask ? "text-[var(--ask)]" : "text-[var(--bid)]")}>
+          {row.quote_event.quote_value}
+        </span>
+        <span className="text-right text-[var(--muted-foreground)]">
+          {row.quote_event.quantity}
+          {row.quote_event.quantity_unit.toLowerCase()}
+        </span>
+      </div>
+      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 text-[10px] uppercase tracking-wide text-[var(--muted-foreground)]">
+        <span className="truncate">{row.quote_event.broker_id}</span>
+        <span>{formatTime(row.quote_event.received_timestamp)}</span>
+      </div>
     </div>
   );
 }

@@ -42,7 +42,10 @@ test("replacement quote mutes superseded row", async ({ page }) => {
   await page.getByLabel("Message").fill("bid petro27 7.27");
   await page.getByRole("button", { name: "Send" }).click();
 
-  await expect(page.getByTestId("book-row-active").filter({ hasText: "7.27" }).first()).toBeVisible();
+  const activeReplacement = page.getByTestId("book-row-active").filter({ hasText: "7.27" }).first();
+  await expect(activeReplacement).toBeVisible();
+  await expect(activeReplacement).toContainText("BROKER_A");
+  await expect(activeReplacement).toContainText(/\d{2}:\d{2}:\d{2}/);
   await expect(
     page.getByTestId("book-row-superseded").filter({ hasText: "7.25" }).first()
   ).toBeVisible();
