@@ -150,7 +150,6 @@ export default function WorkstationPage() {
             <CardContent className="space-y-2 p-3">
               <SidebarSection
                 description="Reserve space for real broker chat integrations."
-                help="Future adapter for live chat sources; no connection side effects in V1."
                 onToggle={() => setConnectOpen((value) => !value)}
                 open={connectOpen}
                 title="Connect"
@@ -162,7 +161,6 @@ export default function WorkstationPage() {
 
               <SidebarSection
                 description="Generate broker flow with controlled noise."
-                help="Random controls ticker/template variation. Noise controls non-quote messages. Step is the simulator interval in milliseconds."
                 onToggle={() => setSimulateOpen((value) => !value)}
                 open={simulateOpen}
                 title="Simulate"
@@ -218,7 +216,6 @@ export default function WorkstationPage() {
 
               <SidebarSection
                 description="Insert manual messages or replay fixtures."
-                help="Manual inserts use the selected broker and current UTC receive timestamp."
                 onToggle={() => setInsertOpen((value) => !value)}
                 open={insertOpen}
                 title="Insert"
@@ -263,7 +260,6 @@ export default function WorkstationPage() {
               <div>
                 <SectionHeading
                   description="Latest accepted raw messages."
-                  help="Chat feed is a compact audit trail of raw inputs received by the API."
                   title="Chat"
                 />
                 <div className="mt-2 max-h-[40vh] overflow-auto">
@@ -435,14 +431,12 @@ function RightEdgeIndicator({ status, onClick }: { status: string; onClick: () =
 function SidebarSection({
   title,
   description,
-  help,
   open,
   onToggle,
   children
 }: {
   title: string;
   description: string;
-  help: string;
   open: boolean;
   onToggle: () => void;
   children: ReactNode;
@@ -450,7 +444,7 @@ function SidebarSection({
   return (
     <section className="border-b border-[var(--border)] pb-2 last:border-b-0 last:pb-0">
       <div className="grid grid-cols-[1fr_auto] gap-2">
-        <SectionHeading description={description} help={help} title={title} />
+        <SectionHeading description={description} title={title} />
         <Button
           aria-expanded={open}
           aria-label={`${open ? "Collapse" : "Expand"} ${title}`}
@@ -473,19 +467,16 @@ function SidebarSection({
 
 function SectionHeading({
   title,
-  description,
-  help
+  description
 }: {
   title: string;
   description: string;
-  help: string;
 }) {
   return (
     <div>
-      <h2 className="text-xs font-semibold uppercase tracking-wide">{title}</h2>
-      <p className="mt-0.5 cursor-help text-[11px] leading-snug text-[var(--muted-foreground)]" title={help}>
-        {description}
-      </p>
+      <h2 className="cursor-help text-xs font-semibold uppercase tracking-wide" title={description}>
+        {title}
+      </h2>
     </div>
   );
 }
