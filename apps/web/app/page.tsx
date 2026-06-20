@@ -1,7 +1,26 @@
 "use client";
 
-import { Minus, Play, Plus, Send, Square } from "lucide-react";
-import { FormEvent, useEffect, useId, useMemo, useReducer, useRef, useState } from "react";
+import {
+  Activity,
+  ChevronLeft,
+  ChevronRight,
+  MessageSquare,
+  Minus,
+  Play,
+  Plus,
+  Send,
+  Square
+} from "lucide-react";
+import {
+  type FormEvent,
+  type ReactNode,
+  useEffect,
+  useId,
+  useMemo,
+  useReducer,
+  useRef,
+  useState
+} from "react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -27,6 +46,8 @@ export default function WorkstationPage() {
   const [noiseRate, setNoiseRate] = useState(0.2);
   const [intervalMs, setIntervalMs] = useState(1000);
   const [uploadStatus, setUploadStatus] = useState<string>("");
+  const [leftOpen, setLeftOpen] = useState(true);
+  const [rightOpen, setRightOpen] = useState(false);
 
   useEffect(() => {
     dispatch({ type: "connection", connection: "connecting" });
@@ -87,121 +108,154 @@ export default function WorkstationPage() {
   }
 
   return (
-    <main className="grid min-h-screen grid-cols-1 gap-3 overflow-x-hidden bg-background p-3 text-foreground lg:grid-cols-[minmax(300px,0.8fr)_minmax(460px,1.25fr)_minmax(320px,0.9fr)]">
-      <Card className="gap-0 rounded-md bg-[var(--panel)] py-0">
-        <PanelHeader title="Broker Chat" status={state.connection} />
-        <form className="space-y-3 p-3" onSubmit={sendMessage}>
-          <div className="grid grid-cols-[1fr_110px] gap-2">
-            <Input
-              className="h-10 bg-black text-sm"
-              value={message}
-              onChange={(event) => setMessage(event.target.value)}
-              aria-label="Message"
+    <main
+      className={cn(
+        "grid min-h-screen grid-cols-1 gap-3 overflow-x-hidden bg-background p-3 text-foreground transition-[grid-template-columns] duration-200 ease-out lg:grid-cols-[minmax(300px,340px)_minmax(0,1fr)_44px]",
+        !leftOpen && "lg:grid-cols-[44px_minmax(0,1fr)_44px]",
+        rightOpen &&
+          "lg:grid-cols-[minmax(300px,340px)_minmax(0,1fr)_minmax(320px,380px)]",
+        !leftOpen && rightOpen && "lg:grid-cols-[44px_minmax(0,1fr)_minmax(320px,380px)]"
+      )}
+    >
+      <aside className="min-w-0">
+        {leftOpen ? (
+          <Card className="h-full gap-0 rounded-md bg-[var(--panel)] py-0">
+            <PanelHeader
+              action={
+                <Button
+                  aria-label="Collapse broker chat"
+                  onClick={() => setLeftOpen(false)}
+                  size="icon-sm"
+                  type="button"
+                  variant="ghost"
+                >
+                  <ChevronLeft />
+                </Button>
+              }
+              status={state.connection}
+              title="Broker Chat"
             />
-            <NativeSelect
-              className="w-full"
-              value={brokerId}
-              onChange={(event) => setBrokerId(event.target.value)}
-              aria-label="Broker"
-            >
-              <NativeSelectOption>BROKER_A</NativeSelectOption>
-              <NativeSelectOption>BROKER_B</NativeSelectOption>
-              <NativeSelectOption>BROKER_C</NativeSelectOption>
-            </NativeSelect>
-          </div>
-          <Button className="gap-2" type="submit" variant="secondary" disabled={!isConnected}>
-            <Send size={16} /> Send
-          </Button>
-        </form>
+            <form className="space-y-2.5 p-3" onSubmit={sendMessage}>
+              <div className="grid grid-cols-[1fr_106px] gap-2">
+                <Input
+                  className="h-9 bg-black text-sm"
+                  value={message}
+                  onChange={(event) => setMessage(event.target.value)}
+                  aria-label="Message"
+                />
+                <NativeSelect
+                  className="w-full"
+                  value={brokerId}
+                  onChange={(event) => setBrokerId(event.target.value)}
+                  aria-label="Broker"
+                >
+                  <NativeSelectOption>BROKER_A</NativeSelectOption>
+                  <NativeSelectOption>BROKER_B</NativeSelectOption>
+                  <NativeSelectOption>BROKER_C</NativeSelectOption>
+                </NativeSelect>
+              </div>
+              <Button className="gap-2" type="submit" variant="secondary" disabled={!isConnected}>
+                <Send size={16} /> Send
+              </Button>
+            </form>
 
-        <Separator />
-        <CardContent className="space-y-3 p-3">
-          <div className="grid grid-cols-3 gap-2 text-xs">
-            <Label className="block">
-              Random
-              <Slider
-                className="mt-3"
-                min={1}
-                max={5}
-                value={[randomness]}
-                onValueChange={(value) =>
-                  setRandomness(Array.isArray(value) ? (value[0] ?? 3) : value)
-                }
-              />
-            </Label>
-            <NumberStepper
-              label="Noise"
-              max={1}
-              min={0}
-              onChange={setNoiseRate}
-              step={0.1}
-              value={noiseRate}
-            />
-            <NumberStepper
-              label="Step"
-              min={250}
-              onChange={setIntervalMs}
-              step={250}
-              value={intervalMs}
-            />
-          </div>
-          <div className="flex gap-2">
-            <Button
-              className="gap-2 bg-emerald-500 text-black hover:bg-emerald-400"
-              type="button"
-              onClick={startSimulator}
-              disabled={!isConnected}
-            >
-              <Play size={16} /> Start
-            </Button>
-            <Button
-              className="gap-2 border-zinc-700 text-zinc-100 hover:bg-zinc-800"
-              variant="outline"
-              type="button"
-              onClick={stopSimulator}
-            >
-              <Square size={16} /> Stop
-            </Button>
-          </div>
-          <Label className="block text-xs text-[var(--muted-foreground)]">
-            Replay JSON/CSV
-            <Input
-              className="mt-2 block w-full text-xs"
-              type="file"
-              accept=".csv,.json,.jsonl"
-              onChange={(event) => void uploadSample(event.target.files?.[0] ?? null)}
-            />
-          </Label>
-          {uploadStatus ? <p className="text-xs text-[var(--muted-foreground)]">{uploadStatus}</p> : null}
-        </CardContent>
+            <Separator />
+            <CardContent className="space-y-3 p-3">
+              <div className="grid grid-cols-1 gap-3 text-xs sm:grid-cols-[1fr_88px_110px] lg:grid-cols-1 xl:grid-cols-[1fr_88px_110px]">
+                <Label className="block">
+                  Random
+                  <Slider
+                    className="mt-3"
+                    min={1}
+                    max={5}
+                    value={[randomness]}
+                    onValueChange={(value) =>
+                      setRandomness(Array.isArray(value) ? (value[0] ?? 3) : value)
+                    }
+                  />
+                </Label>
+                <NumberStepper
+                  label="Noise"
+                  max={1}
+                  min={0}
+                  onChange={setNoiseRate}
+                  step={0.1}
+                  value={noiseRate}
+                />
+                <NumberStepper
+                  label="Step"
+                  min={250}
+                  onChange={setIntervalMs}
+                  step={250}
+                  value={intervalMs}
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <Button
+                  className="gap-2 bg-emerald-500 text-black hover:bg-emerald-400"
+                  type="button"
+                  onClick={startSimulator}
+                  disabled={!isConnected}
+                >
+                  <Play size={16} /> Start
+                </Button>
+                <Button
+                  className="gap-2 border-zinc-700 text-zinc-100 hover:bg-zinc-800"
+                  variant="outline"
+                  type="button"
+                  onClick={stopSimulator}
+                >
+                  <Square size={16} /> Stop
+                </Button>
+              </div>
+              <Label className="block text-xs text-[var(--muted-foreground)]">
+                Replay JSON/CSV
+                <Input
+                  className="mt-2 block w-full text-xs"
+                  type="file"
+                  accept=".csv,.json,.jsonl"
+                  onChange={(event) => void uploadSample(event.target.files?.[0] ?? null)}
+                />
+              </Label>
+              {uploadStatus ? (
+                <p className="text-xs text-[var(--muted-foreground)]">{uploadStatus}</p>
+              ) : null}
+            </CardContent>
 
-        <Separator />
-        <div className="max-h-[48vh] overflow-auto p-3">
-          {state.messages.length === 0 ? (
-            <Empty text="No messages yet" />
-          ) : (
-            state.messages.map((item) => (
-              <Card className="mb-3 gap-1 rounded-md py-2 text-sm" key={item.message_id}>
-                <div className="mb-1 flex justify-between text-xs text-[var(--muted-foreground)]">
-                  <span>{item.broker_id}</span>
-                  <span>{formatTime(item.received_timestamp)}</span>
-                </div>
-                <div>{item.text}</div>
-              </Card>
-            ))
-          )}
-        </div>
-      </Card>
+            <Separator />
+            <div className="max-h-[48vh] overflow-auto p-3">
+              {state.messages.length === 0 ? (
+                <Empty text="No messages yet" />
+              ) : (
+                state.messages.map((item) => (
+                  <Card className="mb-2 gap-1 rounded-md py-2 text-sm" key={item.message_id}>
+                    <div className="mb-1 flex justify-between gap-2 text-xs text-[var(--muted-foreground)]">
+                      <span>{item.broker_id}</span>
+                      <span>{formatTime(item.received_timestamp)}</span>
+                    </div>
+                    <div>{item.text}</div>
+                  </Card>
+                ))
+              )}
+            </div>
+          </Card>
+        ) : (
+          <SidebarIndicator
+            ariaLabel="Expand broker chat"
+            icon={<MessageSquare size={16} />}
+            onClick={() => setLeftOpen(true)}
+            status={state.connection}
+          />
+        )}
+      </aside>
 
-      <Card className="gap-0 rounded-md bg-[var(--panel)] py-0">
-        <PanelHeader title="Consolidated Book" status={state.simulatorRunning ? "auto" : "manual"} />
-        <CardContent className="space-y-4 p-3">
+      <section className="min-w-0">
+        <div className="grid gap-3 [grid-template-columns:repeat(auto-fit,minmax(360px,1fr))] max-[430px]:[grid-template-columns:1fr]">
           {books.length === 0 ? <Empty text="Book empty" /> : null}
           {books.map((book) => (
             <Card className="gap-0 rounded-md py-0" key={book.instrument_id}>
               <div className="flex items-center justify-between border-b border-[var(--border)] bg-[var(--panel-strong)] p-3">
                 <div>
-                  <div className="text-xs text-[var(--muted-foreground)]">Ticker</div>
                   <div className="font-mono text-lg font-semibold">{book.instrument_id}</div>
                 </div>
                 <div className="text-right text-xs text-[var(--muted-foreground)]">
@@ -221,37 +275,103 @@ export default function WorkstationPage() {
               </div>
             </Card>
           ))}
-        </CardContent>
-      </Card>
+        </div>
+      </section>
 
-      <Card className="gap-0 rounded-md bg-[var(--panel)] py-0">
-        <PanelHeader title="Parsed Events" status={`seq ${state.lastSequence}`} />
-        <CardContent className="max-h-[88vh] overflow-auto p-3">
-          {state.events.length === 0 ? <Empty text="No parsed events yet" /> : null}
-          {state.events.map((event) => (
-            <Card className="mb-3 gap-1 rounded-md py-2 text-xs" key={event.event_id}>
-              <div className="mb-1 flex justify-between">
-                <span className="font-semibold">{event.event_type}</span>
-                <span className="text-[var(--muted-foreground)]">#{event.sequence}</span>
-              </div>
-              <div className="text-[var(--muted-foreground)]">corr {event.correlation_id}</div>
-              <pre className="mt-2 max-h-52 overflow-auto whitespace-pre-wrap break-words text-[11px] text-zinc-300">
-                {JSON.stringify(event.payload, null, 2)}
-              </pre>
-            </Card>
-          ))}
-        </CardContent>
-      </Card>
+      <aside className="min-w-0">
+        {rightOpen ? (
+          <Card className="h-full gap-0 rounded-md bg-[var(--panel)] py-0">
+            <PanelHeader
+              action={
+                <Button
+                  aria-label="Collapse parsed events"
+                  onClick={() => setRightOpen(false)}
+                  size="icon-sm"
+                  type="button"
+                  variant="ghost"
+                >
+                  <ChevronRight />
+                </Button>
+              }
+              status={`seq ${state.lastSequence}`}
+              title="Parsed Events"
+            />
+            <CardContent className="max-h-[88vh] overflow-auto p-3">
+              {state.events.length === 0 ? <Empty text="No parsed events yet" /> : null}
+              {state.events.map((event) => (
+                <Card className="mb-2 gap-1 rounded-md py-2 text-xs" key={event.event_id}>
+                  <div className="mb-1 flex justify-between">
+                    <span className="font-semibold">{event.event_type}</span>
+                    <span className="text-[var(--muted-foreground)]">#{event.sequence}</span>
+                  </div>
+                  <div className="text-[var(--muted-foreground)]">corr {event.correlation_id}</div>
+                  <pre className="mt-2 max-h-52 overflow-auto whitespace-pre-wrap break-words text-[11px] text-zinc-300">
+                    {JSON.stringify(event.payload, null, 2)}
+                  </pre>
+                </Card>
+              ))}
+            </CardContent>
+          </Card>
+        ) : (
+          <SidebarIndicator
+            ariaLabel="Expand parsed events"
+            icon={<Activity size={16} />}
+            onClick={() => setRightOpen(true)}
+            status={`seq ${state.lastSequence}`}
+          />
+        )}
+      </aside>
     </main>
   );
 }
 
-function PanelHeader({ title, status }: { title: string; status: string }) {
+function PanelHeader({
+  title,
+  status,
+  action
+}: {
+  title: string;
+  status: string;
+  action?: ReactNode;
+}) {
   return (
     <CardHeader className="flex flex-row items-center justify-between border-b border-[var(--border)] p-3">
-      <h1 className="text-sm font-semibold uppercase tracking-wide">{title}</h1>
-      <Badge variant="outline">{status}</Badge>
+      <div>
+        <h1 className="text-sm font-semibold uppercase tracking-wide">{title}</h1>
+        <Badge className="mt-1" variant="outline">
+          {status}
+        </Badge>
+      </div>
+      {action}
     </CardHeader>
+  );
+}
+
+function SidebarIndicator({
+  ariaLabel,
+  icon,
+  status,
+  onClick
+}: {
+  ariaLabel: string;
+  icon: ReactNode;
+  status: string;
+  onClick: () => void;
+}) {
+  return (
+    <div className="flex justify-center">
+      <Button
+        aria-label={ariaLabel}
+        className="relative size-10 rounded-md border border-[var(--border)] bg-[var(--panel)] text-[var(--muted-foreground)] hover:bg-[var(--panel-strong)] hover:text-foreground"
+        onClick={onClick}
+        title={`${ariaLabel}: ${status}`}
+        type="button"
+        variant="ghost"
+      >
+        {icon}
+        <span className="absolute right-1 top-1 size-1.5 rounded-full bg-[var(--muted-foreground)]" />
+      </Button>
+    </div>
   );
 }
 
@@ -302,25 +422,25 @@ function BookQuoteRow({ row, ask = false }: { row: BookRow; ask?: boolean }) {
   return (
     <div
       className={cn(
-        "grid grid-cols-[64px_48px_1fr_64px] items-center gap-2 rounded border border-[var(--border)] px-2 py-1 font-mono text-xs",
-        ask ? "border-l-[var(--ask)]" : "border-l-[var(--bid)]",
+        "grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 rounded border border-[var(--border)] px-2 py-1 font-mono text-xs",
+        ask
+          ? "bg-[color-mix(in_oklch,var(--ask),transparent_90%)]"
+          : "bg-[color-mix(in_oklch,var(--bid),transparent_90%)]",
         isActive
-          ? "bg-[var(--panel-strong)] text-foreground"
+          ? "text-foreground"
           : "bg-transparent text-[var(--muted-foreground)] opacity-50"
       )}
       data-testid={`book-row-${row.status.toLowerCase()}`}
-      title={row.status.toLowerCase()}
+      title={`${row.status.toLowerCase()} | ${row.quote_event.broker_id} | ${formatTime(
+        row.quote_event.received_timestamp
+      )}`}
     >
       <span className={cn("font-semibold", ask ? "text-[var(--ask)]" : "text-[var(--bid)]")}>
         {row.quote_event.quote_value}
       </span>
-      <span>
+      <span className="text-right text-[var(--muted-foreground)]">
         {row.quote_event.quantity}
         {row.quote_event.quantity_unit.toLowerCase()}
-      </span>
-      <span className="truncate">{row.quote_event.broker_id}</span>
-      <span className="text-right text-[var(--muted-foreground)]">
-        {formatTime(row.quote_event.received_timestamp)}
       </span>
     </div>
   );
@@ -358,7 +478,7 @@ function NumberStepper({
       <Label className="block" htmlFor={id}>
         {label}
       </Label>
-      <div className="mt-1 grid grid-cols-[24px_1fr_24px] gap-1">
+      <div className="mt-1 grid grid-cols-[22px_minmax(38px,1fr)_22px] gap-1">
         <Button
           aria-label={`Decrease ${label}`}
           className="h-7 px-0"
@@ -371,7 +491,7 @@ function NumberStepper({
         </Button>
         <Input
           aria-label={label}
-          className="h-7 bg-black text-center font-mono"
+          className="h-7 bg-black px-1 text-center font-mono text-[11px]"
           id={id}
           inputMode={decimals > 0 ? "decimal" : "numeric"}
           onBlur={() => update(value)}
@@ -397,7 +517,8 @@ function NumberStepper({
 }
 
 function formatTime(value: string) {
-  return new Intl.DateTimeFormat("en-US", {
+  return new Intl.DateTimeFormat("en-GB", {
+    hourCycle: "h23",
     hour: "2-digit",
     minute: "2-digit",
     second: "2-digit"
