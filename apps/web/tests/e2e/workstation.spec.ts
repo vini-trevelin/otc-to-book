@@ -30,6 +30,8 @@ test("side panels expose the book-first shell controls", async ({ page }) => {
   await expect(page.getByRole("heading", { name: "Simulate" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Insert" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Chat", exact: true })).toBeVisible();
+  await page.getByRole("heading", { name: "Simulate" }).hover();
+  await expect(page.getByText("Generate broker flow with controlled noise.")).toBeVisible();
 
   await page.getByRole("button", { name: "Collapse broker chat" }).click();
   await expect(page.getByRole("heading", { name: "Broker Chat" })).toBeHidden();

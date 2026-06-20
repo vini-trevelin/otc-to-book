@@ -30,6 +30,7 @@ import { Label } from "@/components/ui/label";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 import { Separator } from "@/components/ui/separator";
 import { Slider } from "@/components/ui/slider";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import type { BookRow, ClientEvent } from "@/lib/events";
 import { initialState, workstationReducer } from "@/lib/state";
 import { cn } from "@/lib/utils";
@@ -119,15 +120,16 @@ export default function WorkstationPage() {
   }
 
   return (
-    <main
-      className={cn(
-        "relative grid min-h-screen grid-cols-1 gap-3 overflow-x-hidden bg-background p-3 text-foreground transition-[grid-template-columns] duration-200 ease-out lg:grid-cols-[minmax(300px,340px)_minmax(0,1fr)]",
-        !leftOpen && "lg:grid-cols-[44px_minmax(0,1fr)]",
-        rightOpen &&
-          "lg:grid-cols-[minmax(300px,340px)_minmax(0,1fr)_minmax(320px,380px)]",
-        !leftOpen && rightOpen && "lg:grid-cols-[44px_minmax(0,1fr)_minmax(320px,380px)]"
-      )}
-    >
+    <TooltipProvider>
+      <main
+        className={cn(
+          "relative grid min-h-screen grid-cols-1 gap-3 overflow-x-hidden bg-background p-3 text-foreground transition-[grid-template-columns] duration-200 ease-out lg:grid-cols-[minmax(300px,340px)_minmax(0,1fr)]",
+          !leftOpen && "lg:grid-cols-[44px_minmax(0,1fr)]",
+          rightOpen &&
+            "lg:grid-cols-[minmax(300px,340px)_minmax(0,1fr)_minmax(320px,380px)]",
+          !leftOpen && rightOpen && "lg:grid-cols-[44px_minmax(0,1fr)_minmax(320px,380px)]"
+        )}
+      >
       <aside className="min-w-0">
         {leftOpen ? (
           <Card className="h-full gap-0 rounded-md bg-[var(--panel)] py-0">
@@ -357,7 +359,8 @@ export default function WorkstationPage() {
       ) : (
         <RightEdgeIndicator onClick={() => setRightOpen(true)} status={`seq ${state.lastSequence}`} />
       )}
-    </main>
+      </main>
+    </TooltipProvider>
   );
 }
 
@@ -474,9 +477,15 @@ function SectionHeading({
 }) {
   return (
     <div>
-      <h2 className="cursor-help text-xs font-semibold uppercase tracking-wide" title={description}>
-        {title}
-      </h2>
+      <Tooltip>
+        <TooltipTrigger
+          render={<h2 />}
+          className="cursor-help text-xs font-semibold uppercase tracking-wide"
+        >
+          {title}
+        </TooltipTrigger>
+        <TooltipContent side="right">{description}</TooltipContent>
+      </Tooltip>
     </div>
   );
 }
