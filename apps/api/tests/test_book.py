@@ -48,3 +48,26 @@ def test_same_broker_instrument_side_replaces_active_row(raw_message) -> None:
     assert rows[0].quote_event.quote_value == Decimal("7.27")
     assert rows[1].quote_event.quote_value == Decimal("7.25")
     assert rows[1].superseded_timestamp is not None
+
+
+def test_alias_instrument_replaces_same_broker_active_row(raw_message) -> None:
+    builder = BookBuilder()
+    builder.apply_quote(quote(raw_message, "bid petro27 7.25", message_id="old"))
+    state = builder.apply_quote(quote(raw_message, "bid petroo27 7.27", message_id="new"))
+
+    assert sorted(state.books) == ["PETRO27"]
+    rows = state.books["PETRO27"].rows
+    assert [row.status for row in rows] == [BookRowStatus.ACTIVE, BookRowStatus.SUPERSEDED]
+    assert rows[0].quote_event.raw_ticker == "petroo27"
+    assert rows[0].quote_event.instrument_id == "PETRO27"
+    assert rows[0].quote_event.quote_value == Decimal("7.27")
+
+
+def test_new_valid_ticker_creates_separate_book(raw_message) -> None:
+    builder = BookBuilder()
+    builder.apply_quote(quote(raw_message, "bid petro27 7.25", message_id="petro"))
+    state = builder.apply_quote(quote(raw_message, "bid vale29 7.27", message_id="vale"))
+
+    assert sorted(state.books) == ["PETRO27", "VALE29"]
+    assert state.books["VALE29"].best_bid is not None
+    assert state.books["VALE29"].best_bid.quote_event.raw_ticker == "vale29"

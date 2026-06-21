@@ -8,3 +8,7 @@
 {"message_id":"sample-008","expected_type":"rejection","reason":"NO_QUOTE_DETECTED"}
 {"message_id":"sample-009","expected_type":"rejection","reason":"NO_QUOTE_DETECTED"}
 {"message_id":"sample-010","expected_type":"quote","instrument_id":"PETRO27","side":"BID","quote_value":"7.27","quote_value_type":"PRICE","quantity":"1","quantity_unit":"MM"}
+{"message_id":"sample-011","expected_type":"quote","instrument_id":"PETRO27","side":"ASK","quote_value":"7.32","quote_value_type":"PRICE","quantity":"2","quantity_unit":"MM"}
+{"message_id":"sample-012","expected_type":"quote","instrument_id":"PETRO27","side":"BID","quote_value":"7.28","quote_value_type":"PRICE","quantity":"1","quantity_unit":"MM"}
+{"message_id":"sample-013","expected_type":"quote","instrument_id":"PETRO27","side":"ASK","quote_value":"7.33","quote_value_type":"PRICE","quantity":"4","quantity_unit":"MM"}
+{"message_id":"sample-014","expected_type":"quote","instrument_id":"VALE29","side":"ASK","quote_value":"7.40","quote_value_type":"PRICE","quantity":"3","quantity_unit":"MM"}

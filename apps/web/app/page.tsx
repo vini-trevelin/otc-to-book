@@ -324,7 +324,11 @@ export default function WorkstationPage() {
         <div className="grid gap-3 [grid-template-columns:repeat(auto-fit,minmax(360px,1fr))] max-[430px]:[grid-template-columns:1fr]">
           {books.length === 0 ? <BookEmptyState /> : null}
           {books.map((book) => (
-            <Card className="gap-0 rounded-md py-0" key={book.instrument_id}>
+            <Card
+              className="gap-0 rounded-md py-0"
+              data-testid={`book-card-${book.instrument_id}`}
+              key={book.instrument_id}
+            >
               <div className="flex items-center justify-between border-b border-[var(--border)] bg-[var(--panel-strong)] p-3">
                 <div>
                   <div className="font-mono text-lg font-semibold">{book.instrument_id}</div>

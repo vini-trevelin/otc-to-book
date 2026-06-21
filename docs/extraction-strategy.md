@@ -31,6 +31,7 @@ Extractor does not create `QuoteRejected`. Rejection belongs to the validation/a
 V1 implementation:
 
 - `DeterministicQuoteExtractor`
+- session-scoped `TickerResolver` for explicit aliases and valid ticker discovery
 
 Future adapters:
 
@@ -51,6 +52,27 @@ Support at least these patterns:
 Parser should be case-insensitive and tolerate common accents by normalization:
 
 - `até` -> `ate`
+
+## V1 Ticker Resolution
+
+After a template extracts `raw_ticker`, V1 resolves the book-facing `instrument_id`
+deterministically:
+
+```text
+raw_ticker
+  -> uppercase lexical normalization
+  -> explicit alias map
+  -> session valid ticker pool
+  -> QuoteCandidate.instrument_id
+```
+
+Rules:
+
+- known typo aliases map to a canonical instrument before validation, currently `PETROO27`, `PETRRO27`, and `PETR027` -> `PETRO27`;
+- `PETR27` remains distinct from `PETRO27`;
+- unknown valid-looking tickers become new valid tickers in the running backend session;
+- the pool is in-memory only and does not persist across restarts;
+- no edit-distance fuzzy merge runs in V1.
 
 ## Price Normalization
 
@@ -80,9 +102,23 @@ Future desired pipeline:
 Broker
   -> Broker Classifier
   -> Deterministic Parser
+  -> Bounded Fuzzy Candidate Extractor
   -> Fallback LLM
   -> Book
 ```
+
+Future fuzzy/LLM stages must remain behind the `QuoteExtractor` interface and
+must be gated by extraction metrics. Deterministic parsing and ticker resolution
+run first. Bounded fuzzy extraction may later propose candidates only from a known
+canonical universe or alias set. Optional LLM fallback may run only after
+deterministic and fuzzy stages fail or produce low confidence, and must use
+structured output, a bounded timeout, and the same `QuoteValidator` gate before
+book updates.
+
+Future provider configuration is backend-owned. The frontend may select from
+backend-advertised provider profiles, but it must not hold API keys or submit
+arbitrary provider URLs. Provider config should use backend references such as
+`base_url_ref`, `api_key_ref`, `timeout_ms`, and `confidence_threshold`.
 
 V1 should not implement broker learning. It should preserve:
 

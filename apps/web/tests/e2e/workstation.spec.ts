@@ -62,6 +62,29 @@ test("replacement quote mutes superseded row", async ({ page }) => {
   ).toBeVisible();
 });
 
+test("ticker aliases consolidate while new tickers create separate books", async ({ page }) => {
+  await page.goto("/");
+
+  await expect(page.getByText("connected")).toBeVisible();
+  await page.getByLabel("Message").fill("bid petro27 7.25");
+  await page.getByRole("button", { name: "Send" }).click();
+  await expect(page.getByText("7.25").first()).toBeVisible();
+
+  await page.getByLabel("Message").fill("bid petroo27 7.27");
+  await page.getByRole("button", { name: "Send" }).click();
+  await expect(page.getByTestId("book-row-active").filter({ hasText: "7.27" }).first()).toBeVisible();
+  await expect(
+    page.getByTestId("book-row-superseded").filter({ hasText: "7.25" }).first()
+  ).toBeVisible();
+  await expect(page.getByTestId("book-card-PETRO27")).toBeVisible();
+  await expect(page.getByTestId("book-card-PETROO27")).toHaveCount(0);
+
+  await page.getByLabel("Message").fill("vendo vale29 7.40 3mm");
+  await page.getByRole("button", { name: "Send" }).click();
+  await expect(page.getByTestId("book-card-PETRO27")).toBeVisible();
+  await expect(page.getByTestId("book-card-VALE29")).toBeVisible();
+});
+
 test("auto simulator starts", async ({ page }) => {
   await page.goto("/");
 
