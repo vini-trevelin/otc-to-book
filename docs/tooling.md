@@ -50,7 +50,7 @@ Frontend:
 - Next.js.
 - TypeScript.
 - Tailwind.
-- shadcn/ui preset `b5de05qQC`.
+- shadcn/ui with Base UI style configuration (`apps/web/components.json` style `base-mira`).
 - Playwright for E2E.
 
 ## Root Commands
@@ -62,6 +62,8 @@ Commands:
 - `pnpm test`
 - `pnpm lint`
 - `pnpm typecheck`
+- `pnpm --filter web test:e2e`
+- `pnpm check:versions`
 
 API commands:
 

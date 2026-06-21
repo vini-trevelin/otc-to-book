@@ -1,7 +1,26 @@
 "use client";
 
-import { Minus, Play, Plus, Send, Square } from "lucide-react";
-import { FormEvent, useEffect, useId, useMemo, useReducer, useRef, useState } from "react";
+import {
+  Activity,
+  ChevronLeft,
+  ChevronRight,
+  MessageSquare,
+  Minus,
+  Play,
+  Plus,
+  Send,
+  Square
+} from "lucide-react";
+import {
+  type FormEvent,
+  type ReactNode,
+  useEffect,
+  useId,
+  useMemo,
+  useReducer,
+  useRef,
+  useState
+} from "react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -9,10 +28,12 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
-import { Separator } from "@/components/ui/separator";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Slider } from "@/components/ui/slider";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import type { BookRow, ClientEvent } from "@/lib/events";
 import { initialState, workstationReducer } from "@/lib/state";
+import { formatUtcTime } from "@/lib/time";
 import { cn } from "@/lib/utils";
 
 const WS_URL = process.env.NEXT_PUBLIC_API_WS_URL ?? "ws://127.0.0.1:8000/ws";
@@ -27,6 +48,12 @@ export default function WorkstationPage() {
   const [noiseRate, setNoiseRate] = useState(0.2);
   const [intervalMs, setIntervalMs] = useState(1000);
   const [uploadStatus, setUploadStatus] = useState<string>("");
+  const [uploadError, setUploadError] = useState<string>("");
+  const [leftOpen, setLeftOpen] = useState(true);
+  const [rightOpen, setRightOpen] = useState(false);
+  const [connectOpen, setConnectOpen] = useState(false);
+  const [simulateOpen, setSimulateOpen] = useState(true);
+  const [insertOpen, setInsertOpen] = useState(true);
 
   useEffect(() => {
     dispatch({ type: "connection", connection: "connecting" });
@@ -75,137 +102,235 @@ export default function WorkstationPage() {
     sendClientEvent({ event_type: "simulator_stop", payload: {} });
   }
 
+  function toggleSimulator() {
+    if (state.simulatorRunning) {
+      stopSimulator();
+    } else {
+      startSimulator();
+    }
+  }
+
   async function uploadSample(file: File | null) {
     if (!file) return;
+    setUploadStatus("");
+    setUploadError("");
     const formData = new FormData();
     formData.append("file", file);
-    const response = await fetch(`${HTTP_URL}/samples/replay`, {
-      method: "POST",
-      body: formData
-    });
-    setUploadStatus(response.ok ? "Replay uploaded" : "Replay failed");
+    try {
+      const response = await fetch(`${HTTP_URL}/samples/replay`, {
+        method: "POST",
+        body: formData
+      });
+      if (response.ok) {
+        setUploadStatus("Replay uploaded");
+        return;
+      }
+      setUploadError("Replay failed. Check file type/schema, then retry.");
+    } catch {
+      setUploadError("Replay failed. API unavailable; verify backend on port 8000.");
+    }
   }
 
   return (
-    <main className="grid min-h-screen grid-cols-1 gap-3 overflow-x-hidden bg-background p-3 text-foreground lg:grid-cols-[minmax(300px,0.8fr)_minmax(460px,1.25fr)_minmax(320px,0.9fr)]">
-      <Card className="gap-0 rounded-md bg-[var(--panel)] py-0">
-        <PanelHeader title="Broker Chat" status={state.connection} />
-        <form className="space-y-3 p-3" onSubmit={sendMessage}>
-          <div className="grid grid-cols-[1fr_110px] gap-2">
-            <Input
-              className="h-10 bg-black text-sm"
-              value={message}
-              onChange={(event) => setMessage(event.target.value)}
-              aria-label="Message"
+    <TooltipProvider>
+      <main
+        className={cn(
+          "relative grid min-h-screen grid-cols-1 gap-3 overflow-x-hidden bg-background p-3 text-foreground transition-[grid-template-columns] duration-200 ease-out lg:grid-cols-[minmax(300px,340px)_minmax(0,1fr)]",
+          !leftOpen && "lg:grid-cols-[44px_minmax(0,1fr)]",
+          rightOpen &&
+            "lg:grid-cols-[minmax(300px,340px)_minmax(0,1fr)_minmax(320px,380px)]",
+          !leftOpen && rightOpen && "lg:grid-cols-[44px_minmax(0,1fr)_minmax(320px,380px)]"
+        )}
+      >
+      <aside className="min-w-0">
+        {leftOpen ? (
+          <Card className="h-full gap-0 rounded-md bg-[var(--panel)] py-0">
+            <PanelHeader
+              action={
+                <Button
+                  aria-label="Collapse broker chat"
+                  onClick={() => setLeftOpen(false)}
+                  size="icon-sm"
+                  type="button"
+                  variant="ghost"
+                >
+                  <ChevronLeft />
+                </Button>
+              }
+              status={state.connection}
+              statusHelp={
+                isConnected ? null : "Backend stream unavailable. Check the API WebSocket and retry."
+              }
+              title="Broker Input"
             />
-            <NativeSelect
-              className="w-full"
-              value={brokerId}
-              onChange={(event) => setBrokerId(event.target.value)}
-              aria-label="Broker"
-            >
-              <NativeSelectOption>BROKER_A</NativeSelectOption>
-              <NativeSelectOption>BROKER_B</NativeSelectOption>
-              <NativeSelectOption>BROKER_C</NativeSelectOption>
-            </NativeSelect>
-          </div>
-          <Button className="gap-2" type="submit" variant="secondary" disabled={!isConnected}>
-            <Send size={16} /> Send
-          </Button>
-        </form>
 
-        <Separator />
-        <CardContent className="space-y-3 p-3">
-          <div className="grid grid-cols-3 gap-2 text-xs">
-            <Label className="block">
-              Random
-              <Slider
-                className="mt-3"
-                min={1}
-                max={5}
-                value={[randomness]}
-                onValueChange={(value) =>
-                  setRandomness(Array.isArray(value) ? (value[0] ?? 3) : value)
-                }
-              />
-            </Label>
-            <NumberStepper
-              label="Noise"
-              max={1}
-              min={0}
-              onChange={setNoiseRate}
-              step={0.1}
-              value={noiseRate}
-            />
-            <NumberStepper
-              label="Step"
-              min={250}
-              onChange={setIntervalMs}
-              step={250}
-              value={intervalMs}
-            />
-          </div>
-          <div className="flex gap-2">
-            <Button
-              className="gap-2 bg-emerald-500 text-black hover:bg-emerald-400"
-              type="button"
-              onClick={startSimulator}
-              disabled={!isConnected}
-            >
-              <Play size={16} /> Start
-            </Button>
-            <Button
-              className="gap-2 border-zinc-700 text-zinc-100 hover:bg-zinc-800"
-              variant="outline"
-              type="button"
-              onClick={stopSimulator}
-            >
-              <Square size={16} /> Stop
-            </Button>
-          </div>
-          <Label className="block text-xs text-[var(--muted-foreground)]">
-            Replay JSON/CSV
-            <Input
-              className="mt-2 block w-full text-xs"
-              type="file"
-              accept=".csv,.json,.jsonl"
-              onChange={(event) => void uploadSample(event.target.files?.[0] ?? null)}
-            />
-          </Label>
-          {uploadStatus ? <p className="text-xs text-[var(--muted-foreground)]">{uploadStatus}</p> : null}
-        </CardContent>
+            <CardContent className="flex min-h-0 flex-1 flex-col space-y-1.5 p-3">
+              <SidebarSection
+                description="Reserve space for real broker chat integrations."
+                onToggle={() => setConnectOpen((value) => !value)}
+                open={connectOpen}
+                title="Connect"
+              >
+                <ConnectPlaceholder />
+              </SidebarSection>
 
-        <Separator />
-        <div className="max-h-[48vh] overflow-auto p-3">
-          {state.messages.length === 0 ? (
-            <Empty text="No messages yet" />
-          ) : (
-            state.messages.map((item) => (
-              <Card className="mb-3 gap-1 rounded-md py-2 text-sm" key={item.message_id}>
-                <div className="mb-1 flex justify-between text-xs text-[var(--muted-foreground)]">
-                  <span>{item.broker_id}</span>
-                  <span>{formatTime(item.received_timestamp)}</span>
+              <SidebarSection
+                description="Generate broker flow with controlled noise."
+                onToggle={() => setSimulateOpen((value) => !value)}
+                open={simulateOpen}
+                title="Simulate"
+              >
+                <div className="space-y-2.5">
+                  <Label className="block text-xs">
+                    Random
+                    <Slider
+                      className="mt-2"
+                      min={1}
+                      max={5}
+                      value={[randomness]}
+                      onValueChange={(value) =>
+                        setRandomness(Array.isArray(value) ? (value[0] ?? 3) : value)
+                      }
+                    />
+                  </Label>
+                  <div className="grid grid-cols-2 gap-2">
+                    <NumberStepper
+                      label="Noise"
+                      max={1}
+                      min={0}
+                      onChange={setNoiseRate}
+                      step={0.1}
+                      value={noiseRate}
+                    />
+                    <NumberStepper
+                      label="Step"
+                      min={250}
+                      onChange={setIntervalMs}
+                      step={250}
+                      suffix="ms"
+                      value={intervalMs}
+                    />
+                  </div>
+                  <Button
+                    className={cn(
+                      "w-full gap-2",
+                      state.simulatorRunning
+                        ? "border-zinc-700 text-zinc-100 hover:bg-zinc-800"
+                        : "border border-[var(--border)] bg-[var(--panel-strong)] text-foreground hover:bg-zinc-800"
+                    )}
+                    type="button"
+                    onClick={toggleSimulator}
+                    disabled={!isConnected}
+                    variant={state.simulatorRunning ? "outline" : "default"}
+                  >
+                    {state.simulatorRunning ? <Square size={16} /> : <Play size={16} />}
+                    {state.simulatorRunning ? "Stop simulation" : "Start simulation"}
+                  </Button>
                 </div>
-                <div>{item.text}</div>
-              </Card>
-            ))
-          )}
-        </div>
-      </Card>
+              </SidebarSection>
 
-      <Card className="gap-0 rounded-md bg-[var(--panel)] py-0">
-        <PanelHeader title="Consolidated Book" status={state.simulatorRunning ? "auto" : "manual"} />
-        <CardContent className="space-y-4 p-3">
-          {books.length === 0 ? <Empty text="Book empty" /> : null}
+              <SidebarSection
+                description="Insert manual messages or replay fixtures."
+                onToggle={() => setInsertOpen((value) => !value)}
+                open={insertOpen}
+                title="Insert"
+              >
+                <form className="space-y-2" onSubmit={sendMessage}>
+                  <div className="grid grid-cols-[1fr_104px] gap-2">
+                    <Input
+                      className="h-8 bg-black text-xs"
+                      value={message}
+                      onChange={(event) => setMessage(event.target.value)}
+                      aria-label="Message"
+                    />
+                    <NativeSelect
+                      className="w-full"
+                      value={brokerId}
+                      onChange={(event) => setBrokerId(event.target.value)}
+                      aria-label="Broker"
+                    >
+                      <NativeSelectOption>BROKER_A</NativeSelectOption>
+                      <NativeSelectOption>BROKER_B</NativeSelectOption>
+                      <NativeSelectOption>BROKER_C</NativeSelectOption>
+                    </NativeSelect>
+                  </div>
+                  <Button className="gap-2" type="submit" variant="secondary" disabled={!isConnected}>
+                    <Send size={16} /> Send
+                  </Button>
+                  <Label className="block text-[11px] text-[var(--muted-foreground)]">
+                    Replay fixture
+                    <Input
+                      className="mt-1.5 block h-7 w-full text-[11px]"
+                      type="file"
+                      accept=".csv,.json,.jsonl"
+                      onChange={(event) => void uploadSample(event.target.files?.[0] ?? null)}
+                    />
+                  </Label>
+                  {uploadStatus ? (
+                    <p className="text-xs text-[var(--muted-foreground)]">{uploadStatus}</p>
+                  ) : null}
+                  {uploadError ? (
+                    <p role="alert" className="text-xs text-[var(--warning)]">
+                      {uploadError}
+                    </p>
+                  ) : null}
+                </form>
+              </SidebarSection>
+
+              <div className="flex flex-none flex-col">
+                <SectionHeading
+                  description="Latest accepted raw messages."
+                  title="Chat"
+                />
+                <div className="mt-2 h-44 overflow-auto">
+                  {state.messages.length === 0 ? (
+                    <EmptyWithSkeleton
+                      className="h-full"
+                      text="No raw messages yet. Send or simulate broker flow to populate this feed."
+                    >
+                      <div aria-hidden="true" className="space-y-2">
+                        <Skeleton className="h-3 w-24 bg-muted/30" />
+                        <Skeleton className="h-4 w-full bg-muted/20" />
+                        <Skeleton className="h-3 w-20 bg-muted/25" />
+                        <Skeleton className="h-4 w-4/5 bg-muted/15" />
+                      </div>
+                    </EmptyWithSkeleton>
+                  ) : (
+                    state.messages.map((item) => (
+                      <Card className="mb-2 gap-1 rounded-md py-2 text-sm" key={item.message_id}>
+                        <div className="mb-1 flex justify-between gap-2 text-xs text-[var(--muted-foreground)]">
+                          <span>{item.broker_id}</span>
+                          <span>{formatUtcTime(item.received_timestamp)}</span>
+                        </div>
+                        <div>{item.text}</div>
+                      </Card>
+                    ))
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        ) : (
+          <SidebarIndicator
+            ariaLabel="Expand broker chat"
+            icon={<MessageSquare size={16} />}
+            onClick={() => setLeftOpen(true)}
+            status={state.connection}
+          />
+        )}
+      </aside>
+
+      <section className="min-w-0">
+        <div className="grid gap-3 [grid-template-columns:repeat(auto-fit,minmax(360px,1fr))] max-[430px]:[grid-template-columns:1fr]">
+          {books.length === 0 ? <BookEmptyState /> : null}
           {books.map((book) => (
             <Card className="gap-0 rounded-md py-0" key={book.instrument_id}>
               <div className="flex items-center justify-between border-b border-[var(--border)] bg-[var(--panel-strong)] p-3">
                 <div>
-                  <div className="text-xs text-[var(--muted-foreground)]">Ticker</div>
                   <div className="font-mono text-lg font-semibold">{book.instrument_id}</div>
                 </div>
                 <div className="text-right text-xs text-[var(--muted-foreground)]">
-                  updated {formatTime(book.updated_timestamp)}
+                  updated {formatUtcTime(book.updated_timestamp)}
                 </div>
               </div>
               <div className="grid grid-cols-1 gap-3 p-3 md:grid-cols-2">
@@ -221,45 +346,271 @@ export default function WorkstationPage() {
               </div>
             </Card>
           ))}
-        </CardContent>
-      </Card>
+        </div>
+      </section>
 
-      <Card className="gap-0 rounded-md bg-[var(--panel)] py-0">
-        <PanelHeader title="Parsed Events" status={`seq ${state.lastSequence}`} />
-        <CardContent className="max-h-[88vh] overflow-auto p-3">
-          {state.events.length === 0 ? <Empty text="No parsed events yet" /> : null}
-          {state.events.map((event) => (
-            <Card className="mb-3 gap-1 rounded-md py-2 text-xs" key={event.event_id}>
-              <div className="mb-1 flex justify-between">
-                <span className="font-semibold">{event.event_type}</span>
-                <span className="text-[var(--muted-foreground)]">#{event.sequence}</span>
-              </div>
-              <div className="text-[var(--muted-foreground)]">corr {event.correlation_id}</div>
-              <pre className="mt-2 max-h-52 overflow-auto whitespace-pre-wrap break-words text-[11px] text-zinc-300">
-                {JSON.stringify(event.payload, null, 2)}
-              </pre>
-            </Card>
-          ))}
-        </CardContent>
-      </Card>
-    </main>
+      {rightOpen ? (
+        <aside className="min-w-0">
+          <Card className="h-full gap-0 rounded-md bg-[var(--panel)] py-0">
+            <PanelHeader
+              action={
+                <Button
+                  aria-label="Collapse parsed events"
+                  onClick={() => setRightOpen(false)}
+                  size="icon-sm"
+                  type="button"
+                  variant="ghost"
+                >
+                  <ChevronRight />
+                </Button>
+              }
+              status={`seq ${state.lastSequence}`}
+              title="Parsed Events"
+            />
+            <CardContent className="max-h-[88vh] overflow-auto p-3">
+              {state.events.length === 0 ? (
+                <EmptyWithSkeleton text="No parsed events yet. Open this feed after sending or simulating messages to inspect extraction output.">
+                  <div aria-hidden="true" className="space-y-2">
+                    <Skeleton className="h-3 w-28 bg-muted/30" />
+                    <Skeleton className="h-3 w-full bg-muted/18" />
+                    <Skeleton className="h-3 w-4/5 bg-muted/18" />
+                  </div>
+                </EmptyWithSkeleton>
+              ) : null}
+              {state.events.map((event) => (
+                <Card className="mb-2 gap-1 rounded-md py-2 text-xs" key={event.event_id}>
+                  <div className="mb-1 flex justify-between">
+                    <span className="font-semibold">{event.event_type}</span>
+                    <span className="text-[var(--muted-foreground)]">#{event.sequence}</span>
+                  </div>
+                  <div className="text-[var(--muted-foreground)]">corr {event.correlation_id}</div>
+                  <pre className="mt-2 max-h-52 overflow-auto whitespace-pre-wrap break-words text-[11px] text-zinc-300">
+                    {JSON.stringify(event.payload, null, 2)}
+                  </pre>
+                </Card>
+              ))}
+            </CardContent>
+          </Card>
+        </aside>
+      ) : (
+        <RightEdgeIndicator onClick={() => setRightOpen(true)} status={`seq ${state.lastSequence}`} />
+      )}
+      </main>
+    </TooltipProvider>
   );
 }
 
-function PanelHeader({ title, status }: { title: string; status: string }) {
+function PanelHeader({
+  title,
+  status,
+  statusHelp,
+  action
+}: {
+  title: string;
+  status: string;
+  statusHelp?: string | null;
+  action?: ReactNode;
+}) {
   return (
-    <CardHeader className="flex flex-row items-center justify-between border-b border-[var(--border)] p-3">
-      <h1 className="text-sm font-semibold uppercase tracking-wide">{title}</h1>
-      <Badge variant="outline">{status}</Badge>
+    <CardHeader className="flex flex-row items-center justify-between border-b border-[var(--border)] px-3 py-2.5">
+      <div>
+        <h1 className="text-xs font-semibold uppercase tracking-wide">{title}</h1>
+        <Badge className="mt-1" variant="outline">
+          {status}
+        </Badge>
+        {statusHelp ? (
+          <p role="status" className="mt-1 max-w-60 text-[11px] leading-snug text-[var(--warning)]">
+            {statusHelp}
+          </p>
+        ) : null}
+      </div>
+      {action}
     </CardHeader>
   );
 }
 
-function Empty({ text }: { text: string }) {
+function SidebarIndicator({
+  ariaLabel,
+  icon,
+  status,
+  onClick
+}: {
+  ariaLabel: string;
+  icon: ReactNode;
+  status: string;
+  onClick: () => void;
+}) {
   return (
-    <Card className="rounded-md border-dashed p-4 text-sm text-[var(--muted-foreground)]">
-      {text}
-    </Card>
+    <div className="flex justify-center">
+      <Button
+        aria-label={ariaLabel}
+        className="relative size-10 rounded-md border border-[var(--border)] bg-[var(--panel)] text-[var(--muted-foreground)] hover:bg-[var(--panel-strong)] hover:text-foreground"
+        onClick={onClick}
+        title={`${ariaLabel}: ${status}`}
+        type="button"
+        variant="ghost"
+      >
+        {icon}
+        <span className="absolute right-1 top-1 size-1.5 rounded-full bg-[var(--muted-foreground)]" />
+      </Button>
+    </div>
+  );
+}
+
+function RightEdgeIndicator({ status, onClick }: { status: string; onClick: () => void }) {
+  return (
+    <div className="group fixed right-0 top-3 z-20 flex h-12 w-3 items-center justify-end">
+      <Button
+        aria-label="Expand parsed events"
+        className="mr-1 size-9 translate-x-2 rounded-md border border-[var(--border)] bg-[var(--panel)] text-[var(--muted-foreground)] opacity-0 transition-[opacity,transform] duration-150 hover:bg-[var(--panel-strong)] hover:text-foreground group-hover:translate-x-0 group-hover:opacity-100 focus-visible:translate-x-0 focus-visible:opacity-100"
+        onClick={onClick}
+        title={`Expand parsed events: ${status}`}
+        type="button"
+        variant="ghost"
+      >
+        <Activity size={16} />
+      </Button>
+    </div>
+  );
+}
+
+function SidebarSection({
+  title,
+  description,
+  open,
+  onToggle,
+  children
+}: {
+  title: string;
+  description: string;
+  open: boolean;
+  onToggle: () => void;
+  children: ReactNode;
+}) {
+  return (
+    <section className="border-b border-[var(--border)] pb-1.5 last:border-b-0 last:pb-0">
+      <div className="grid grid-cols-[1fr_auto] gap-2">
+        <SectionHeading description={description} title={title} />
+        <Button
+          aria-expanded={open}
+          aria-label={`${open ? "Collapse" : "Expand"} ${title}`}
+          className="mt-0.5"
+          onClick={onToggle}
+          size="icon-sm"
+          type="button"
+          variant="ghost"
+        >
+          <ChevronRight
+            className={cn("transition-transform duration-150", open && "rotate-90")}
+            size={14}
+          />
+        </Button>
+      </div>
+      {open ? <div className="mt-1.5">{children}</div> : null}
+    </section>
+  );
+}
+
+function SectionHeading({
+  title,
+  description
+}: {
+  title: string;
+  description: string;
+}) {
+  return (
+    <div>
+      <Tooltip>
+        <TooltipTrigger
+          render={<h2 tabIndex={0} />}
+          className="cursor-help text-xs font-semibold uppercase tracking-wide decoration-dotted underline-offset-4 hover:underline focus-visible:underline"
+        >
+          {title}
+        </TooltipTrigger>
+        <TooltipContent side="right">{description}</TooltipContent>
+      </Tooltip>
+    </div>
+  );
+}
+
+function ConnectPlaceholder() {
+  return (
+    <div className="rounded-md border border-dashed border-[color-mix(in_oklch,var(--border),transparent_35%)] px-2.5 py-2">
+      <div className="mb-2 text-xs text-[color-mix(in_oklch,var(--muted-foreground),transparent_18%)]">
+        Live chat connectors will land here.
+      </div>
+      <div aria-hidden="true" className="space-y-1.5">
+        <Skeleton className="h-3 w-3/4 bg-muted/25" />
+        <Skeleton className="h-3 w-1/2 bg-muted/18" />
+      </div>
+    </div>
+  );
+}
+
+function EmptyWithSkeleton({
+  text,
+  className,
+  children
+}: {
+  text: string;
+  className?: string;
+  children?: ReactNode;
+}) {
+  return (
+    <div
+      className={cn(
+        "rounded-md border border-dashed border-[color-mix(in_oklch,var(--border),transparent_35%)] p-4 text-sm text-[color-mix(in_oklch,var(--muted-foreground),transparent_12%)]",
+        className
+      )}
+    >
+      <div>{text}</div>
+      {children ? <div className="mt-3">{children}</div> : null}
+    </div>
+  );
+}
+
+function BookEmptyState() {
+  return (
+    <div className="rounded-md border border-dashed border-[color-mix(in_oklch,var(--border),transparent_35%)] bg-[color-mix(in_oklch,var(--panel),transparent_25%)] p-4 text-sm text-[color-mix(in_oklch,var(--muted-foreground),transparent_12%)]">
+      <div className="text-[color-mix(in_oklch,var(--foreground),transparent_12%)]">Book empty</div>
+      <div className="mt-1 max-w-xl text-xs">
+        Send a broker message or start simulation to build the book. The flow is raw message,
+        parsed event, then active bid/ask row.
+      </div>
+      <div aria-hidden="true" className="mt-3 grid gap-3 sm:grid-cols-2">
+        <BookCardSkeleton />
+        <BookCardSkeleton />
+      </div>
+    </div>
+  );
+}
+
+function BookCardSkeleton() {
+  return (
+    <div className="rounded-md border border-[color-mix(in_oklch,var(--border),transparent_45%)] bg-[color-mix(in_oklch,var(--panel-strong),transparent_35%)] p-3 opacity-75">
+      <div className="flex items-center justify-between gap-3">
+        <Skeleton className="h-4 w-20 bg-muted/25" />
+        <Skeleton className="h-3 w-24 bg-muted/18" />
+      </div>
+      <div className="mt-4 grid grid-cols-2 gap-3">
+        <div className="space-y-2">
+          <div className="flex justify-between">
+            <Skeleton className="h-3 w-9 bg-[color-mix(in_oklch,var(--bid),transparent_84%)]" />
+            <Skeleton className="h-3 w-5 bg-muted/18" />
+          </div>
+          <Skeleton className="h-9 w-full bg-[color-mix(in_oklch,var(--bid),transparent_93%)]" />
+          <Skeleton className="h-9 w-full bg-[color-mix(in_oklch,var(--bid),transparent_95%)]" />
+        </div>
+        <div className="space-y-2">
+          <div className="flex justify-between">
+            <Skeleton className="h-3 w-9 bg-[color-mix(in_oklch,var(--ask),transparent_84%)]" />
+            <Skeleton className="h-3 w-5 bg-muted/18" />
+          </div>
+          <Skeleton className="h-9 w-full bg-[color-mix(in_oklch,var(--ask),transparent_93%)]" />
+          <Skeleton className="h-9 w-full bg-[color-mix(in_oklch,var(--ask),transparent_95%)]" />
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -283,7 +634,7 @@ function BookSideColumn({
         <span>{label}</span>
         <span className="text-[var(--muted-foreground)]">{rows.length}</span>
       </div>
-      <div className="space-y-1">
+      <div className="max-h-[11.75rem] space-y-1 overflow-y-auto pr-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {rows.length === 0 ? (
           <div className="rounded border border-dashed border-[var(--border)] px-2 py-2 text-xs text-[var(--muted-foreground)]">
             No quotes
@@ -302,26 +653,32 @@ function BookQuoteRow({ row, ask = false }: { row: BookRow; ask?: boolean }) {
   return (
     <div
       className={cn(
-        "grid grid-cols-[64px_48px_1fr_64px] items-center gap-2 rounded border border-[var(--border)] px-2 py-1 font-mono text-xs",
-        ask ? "border-l-[var(--ask)]" : "border-l-[var(--bid)]",
+        "grid min-h-10 gap-1 rounded border border-[var(--border)] px-2 py-1 font-mono text-xs",
+        ask
+          ? "bg-[color-mix(in_oklch,var(--ask),transparent_90%)]"
+          : "bg-[color-mix(in_oklch,var(--bid),transparent_90%)]",
         isActive
-          ? "bg-[var(--panel-strong)] text-foreground"
+          ? "text-foreground"
           : "bg-transparent text-[var(--muted-foreground)] opacity-50"
       )}
       data-testid={`book-row-${row.status.toLowerCase()}`}
-      title={row.status.toLowerCase()}
+      title={`${row.status.toLowerCase()} | ${row.quote_event.broker_id} | ${formatUtcTime(
+        row.quote_event.received_timestamp
+      )}`}
     >
-      <span className={cn("font-semibold", ask ? "text-[var(--ask)]" : "text-[var(--bid)]")}>
-        {row.quote_event.quote_value}
-      </span>
-      <span>
-        {row.quote_event.quantity}
-        {row.quote_event.quantity_unit.toLowerCase()}
-      </span>
-      <span className="truncate">{row.quote_event.broker_id}</span>
-      <span className="text-right text-[var(--muted-foreground)]">
-        {formatTime(row.quote_event.received_timestamp)}
-      </span>
+      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2">
+        <span className={cn("font-semibold", ask ? "text-[var(--ask)]" : "text-[var(--bid)]")}>
+          {row.quote_event.quote_value}
+        </span>
+        <span className="text-right text-[var(--muted-foreground)]">
+          {row.quote_event.quantity}
+          {row.quote_event.quantity_unit.toLowerCase()}
+        </span>
+      </div>
+      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 text-[10px] uppercase tracking-wide text-[var(--muted-foreground)]">
+        <span className="truncate">{row.quote_event.broker_id}</span>
+        <span>{formatUtcTime(row.quote_event.received_timestamp)}</span>
+      </div>
     </div>
   );
 }
@@ -332,6 +689,7 @@ function NumberStepper({
   min,
   max,
   step,
+  suffix,
   onChange
 }: {
   label: string;
@@ -339,6 +697,7 @@ function NumberStepper({
   min: number;
   max?: number;
   step: number;
+  suffix?: string;
   onChange: (value: number) => void;
 }) {
   const id = useId();
@@ -356,9 +715,9 @@ function NumberStepper({
   return (
     <div>
       <Label className="block" htmlFor={id}>
-        {label}
+        {suffix ? `${label} (${suffix})` : label}
       </Label>
-      <div className="mt-1 grid grid-cols-[24px_1fr_24px] gap-1">
+      <div className="mt-1 grid grid-cols-[22px_minmax(38px,1fr)_22px] gap-1">
         <Button
           aria-label={`Decrease ${label}`}
           className="h-7 px-0"
@@ -370,8 +729,8 @@ function NumberStepper({
           <Minus size={12} />
         </Button>
         <Input
-          aria-label={label}
-          className="h-7 bg-black text-center font-mono"
+          aria-label={suffix ? `${label} (${suffix})` : label}
+          className="h-7 bg-black px-1 text-center font-mono text-[11px]"
           id={id}
           inputMode={decimals > 0 ? "decimal" : "numeric"}
           onBlur={() => update(value)}
@@ -394,12 +753,4 @@ function NumberStepper({
       </div>
     </div>
   );
-}
-
-function formatTime(value: string) {
-  return new Intl.DateTimeFormat("en-US", {
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit"
-  }).format(new Date(value));
 }
