@@ -28,7 +28,6 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
-import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Slider } from "@/components/ui/slider";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -277,22 +276,22 @@ export default function WorkstationPage() {
                 </form>
               </SidebarSection>
 
-              <div className="flex min-h-0 flex-1 flex-col">
+              <div className="flex flex-none flex-col">
                 <SectionHeading
                   description="Latest accepted raw messages."
                   title="Chat"
                 />
-                <div className="mt-2 min-h-0 flex-1 overflow-auto">
+                <div className="mt-2 h-44 overflow-auto">
                   {state.messages.length === 0 ? (
                     <EmptyWithSkeleton
-                      className="h-full min-h-28"
+                      className="h-full"
                       text="No raw messages yet. Send or simulate broker flow to populate this feed."
                     >
                       <div aria-hidden="true" className="space-y-2">
-                        <Skeleton className="h-3 w-24 bg-muted/55" />
-                        <Skeleton className="h-4 w-full bg-muted/40" />
-                        <Skeleton className="h-3 w-20 bg-muted/45" />
-                        <Skeleton className="h-4 w-4/5 bg-muted/35" />
+                        <Skeleton className="h-3 w-24 bg-muted/30" />
+                        <Skeleton className="h-4 w-full bg-muted/20" />
+                        <Skeleton className="h-3 w-20 bg-muted/25" />
+                        <Skeleton className="h-4 w-4/5 bg-muted/15" />
                       </div>
                     </EmptyWithSkeleton>
                   ) : (
@@ -371,9 +370,9 @@ export default function WorkstationPage() {
               {state.events.length === 0 ? (
                 <EmptyWithSkeleton text="No parsed events yet. Open this feed after sending or simulating messages to inspect extraction output.">
                   <div aria-hidden="true" className="space-y-2">
-                    <Skeleton className="h-3 w-28 bg-muted/55" />
-                    <Skeleton className="h-3 w-full bg-muted/35" />
-                    <Skeleton className="h-3 w-4/5 bg-muted/35" />
+                    <Skeleton className="h-3 w-28 bg-muted/30" />
+                    <Skeleton className="h-3 w-full bg-muted/18" />
+                    <Skeleton className="h-3 w-4/5 bg-muted/18" />
                   </div>
                 </EmptyWithSkeleton>
               ) : null}
@@ -535,13 +534,13 @@ function SectionHeading({
 
 function ConnectPlaceholder() {
   return (
-    <div className="rounded-md border border-dashed border-[var(--border)] px-2.5 py-2">
-      <div className="mb-2 text-xs text-[var(--muted-foreground)]">
+    <div className="rounded-md border border-dashed border-[color-mix(in_oklch,var(--border),transparent_35%)] px-2.5 py-2">
+      <div className="mb-2 text-xs text-[color-mix(in_oklch,var(--muted-foreground),transparent_18%)]">
         Live chat connectors will land here.
       </div>
       <div aria-hidden="true" className="space-y-1.5">
-        <Skeleton className="h-3 w-3/4 bg-muted/60" />
-        <Skeleton className="h-3 w-1/2 bg-muted/45" />
+        <Skeleton className="h-3 w-3/4 bg-muted/25" />
+        <Skeleton className="h-3 w-1/2 bg-muted/18" />
       </div>
     </div>
   );
@@ -559,7 +558,7 @@ function EmptyWithSkeleton({
   return (
     <div
       className={cn(
-        "rounded-md border border-dashed border-[var(--border)] p-4 text-sm text-[var(--muted-foreground)]",
+        "rounded-md border border-dashed border-[color-mix(in_oklch,var(--border),transparent_35%)] p-4 text-sm text-[color-mix(in_oklch,var(--muted-foreground),transparent_12%)]",
         className
       )}
     >
@@ -571,8 +570,8 @@ function EmptyWithSkeleton({
 
 function BookEmptyState() {
   return (
-    <div className="rounded-md border border-dashed border-[var(--border)] bg-[var(--panel)] p-4 text-sm text-[var(--muted-foreground)]">
-      <div className="text-foreground">Book empty</div>
+    <div className="rounded-md border border-dashed border-[color-mix(in_oklch,var(--border),transparent_35%)] bg-[color-mix(in_oklch,var(--panel),transparent_25%)] p-4 text-sm text-[color-mix(in_oklch,var(--muted-foreground),transparent_12%)]">
+      <div className="text-[color-mix(in_oklch,var(--foreground),transparent_12%)]">Book empty</div>
       <div className="mt-1 max-w-xl text-xs">
         Send a broker message or start simulation to build the book. The flow is raw message,
         parsed event, then active bid/ask row.
@@ -587,27 +586,27 @@ function BookEmptyState() {
 
 function BookCardSkeleton() {
   return (
-    <div className="rounded-md border border-[var(--border)] bg-[var(--panel-strong)] p-3">
+    <div className="rounded-md border border-[color-mix(in_oklch,var(--border),transparent_45%)] bg-[color-mix(in_oklch,var(--panel-strong),transparent_35%)] p-3 opacity-75">
       <div className="flex items-center justify-between gap-3">
-        <Skeleton className="h-4 w-20 bg-muted/70" />
-        <Skeleton className="h-3 w-24 bg-muted/45" />
+        <Skeleton className="h-4 w-20 bg-muted/25" />
+        <Skeleton className="h-3 w-24 bg-muted/18" />
       </div>
       <div className="mt-4 grid grid-cols-2 gap-3">
         <div className="space-y-2">
           <div className="flex justify-between">
-            <Skeleton className="h-3 w-9 bg-[color-mix(in_oklch,var(--bid),transparent_72%)]" />
-            <Skeleton className="h-3 w-5 bg-muted/45" />
+            <Skeleton className="h-3 w-9 bg-[color-mix(in_oklch,var(--bid),transparent_84%)]" />
+            <Skeleton className="h-3 w-5 bg-muted/18" />
           </div>
-          <Skeleton className="h-9 w-full bg-[color-mix(in_oklch,var(--bid),transparent_86%)]" />
-          <Skeleton className="h-9 w-full bg-[color-mix(in_oklch,var(--bid),transparent_91%)]" />
+          <Skeleton className="h-9 w-full bg-[color-mix(in_oklch,var(--bid),transparent_93%)]" />
+          <Skeleton className="h-9 w-full bg-[color-mix(in_oklch,var(--bid),transparent_95%)]" />
         </div>
         <div className="space-y-2">
           <div className="flex justify-between">
-            <Skeleton className="h-3 w-9 bg-[color-mix(in_oklch,var(--ask),transparent_72%)]" />
-            <Skeleton className="h-3 w-5 bg-muted/45" />
+            <Skeleton className="h-3 w-9 bg-[color-mix(in_oklch,var(--ask),transparent_84%)]" />
+            <Skeleton className="h-3 w-5 bg-muted/18" />
           </div>
-          <Skeleton className="h-9 w-full bg-[color-mix(in_oklch,var(--ask),transparent_86%)]" />
-          <Skeleton className="h-9 w-full bg-[color-mix(in_oklch,var(--ask),transparent_91%)]" />
+          <Skeleton className="h-9 w-full bg-[color-mix(in_oklch,var(--ask),transparent_93%)]" />
+          <Skeleton className="h-9 w-full bg-[color-mix(in_oklch,var(--ask),transparent_95%)]" />
         </div>
       </div>
     </div>
