@@ -33,6 +33,7 @@ import { Slider } from "@/components/ui/slider";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import type { BookRow, ClientEvent } from "@/lib/events";
 import { initialState, workstationReducer } from "@/lib/state";
+import { formatUtcTime } from "@/lib/time";
 import { cn } from "@/lib/utils";
 
 const WS_URL = process.env.NEXT_PUBLIC_API_WS_URL ?? "ws://127.0.0.1:8000/ws";
@@ -299,7 +300,7 @@ export default function WorkstationPage() {
                       <Card className="mb-2 gap-1 rounded-md py-2 text-sm" key={item.message_id}>
                         <div className="mb-1 flex justify-between gap-2 text-xs text-[var(--muted-foreground)]">
                           <span>{item.broker_id}</span>
-                          <span>{formatTime(item.received_timestamp)}</span>
+                          <span>{formatUtcTime(item.received_timestamp)}</span>
                         </div>
                         <div>{item.text}</div>
                       </Card>
@@ -329,7 +330,7 @@ export default function WorkstationPage() {
                   <div className="font-mono text-lg font-semibold">{book.instrument_id}</div>
                 </div>
                 <div className="text-right text-xs text-[var(--muted-foreground)]">
-                  updated {formatTime(book.updated_timestamp)}
+                  updated {formatUtcTime(book.updated_timestamp)}
                 </div>
               </div>
               <div className="grid grid-cols-1 gap-3 p-3 md:grid-cols-2">
@@ -521,7 +522,7 @@ function SectionHeading({
     <div>
       <Tooltip>
         <TooltipTrigger
-          render={<h2 />}
+          render={<h2 tabIndex={0} />}
           className="cursor-help text-xs font-semibold uppercase tracking-wide decoration-dotted underline-offset-4 hover:underline focus-visible:underline"
         >
           {title}
@@ -661,7 +662,7 @@ function BookQuoteRow({ row, ask = false }: { row: BookRow; ask?: boolean }) {
           : "bg-transparent text-[var(--muted-foreground)] opacity-50"
       )}
       data-testid={`book-row-${row.status.toLowerCase()}`}
-      title={`${row.status.toLowerCase()} | ${row.quote_event.broker_id} | ${formatTime(
+      title={`${row.status.toLowerCase()} | ${row.quote_event.broker_id} | ${formatUtcTime(
         row.quote_event.received_timestamp
       )}`}
     >
@@ -676,7 +677,7 @@ function BookQuoteRow({ row, ask = false }: { row: BookRow; ask?: boolean }) {
       </div>
       <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 text-[10px] uppercase tracking-wide text-[var(--muted-foreground)]">
         <span className="truncate">{row.quote_event.broker_id}</span>
-        <span>{formatTime(row.quote_event.received_timestamp)}</span>
+        <span>{formatUtcTime(row.quote_event.received_timestamp)}</span>
       </div>
     </div>
   );
@@ -752,13 +753,4 @@ function NumberStepper({
       </div>
     </div>
   );
-}
-
-function formatTime(value: string) {
-  return new Intl.DateTimeFormat("en-GB", {
-    hourCycle: "h23",
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit"
-  }).format(new Date(value));
 }

@@ -103,8 +103,8 @@ The palette is restrained: neutral dark surfaces carry most of the screen, with 
 
 ## 3. Typography
 
-**Display Font:** Oxanium with system sans fallback  
-**Body Font:** Oxanium with system sans fallback  
+**Display Font:** Oxanium with system sans fallback
+**Body Font:** Oxanium with system sans fallback
 **Label/Mono Font:** Oxanium with system sans fallback
 
 **Character:** The current type system is single-family and technical. It supports compact labels and numeric quote values without introducing marketing-style display hierarchy.
