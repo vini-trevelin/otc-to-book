@@ -101,6 +101,8 @@ The palette is restrained: neutral dark surfaces carry most of the screen, with 
 
 **The Semantic Accent Rule.** Green and red are for bid/ask semantics only. Do not use them as decorative accents elsewhere.
 
+**The Teal Status Rule.** Teal currently exists only as inherited shadcn chart tokens in `apps/web/app/globals.css` (`--chart-1` through `--chart-5`). The active workstation layout does not consume teal. If teal returns, it should be an explicit operational accent decision, not a decorative replacement for bid/ask semantics.
+
 ## 3. Typography
 
 **Display Font:** Oxanium with system sans fallback
@@ -176,5 +178,5 @@ Book cards are the signature component. The ticker, last update timestamp, bid/a
 - **Don't** build a marketing page, chatbot interface, or generic SaaS dashboard.
 - **Don't** use decorative gradients, glassmorphism, or large soft shadows.
 - **Don't** use colored side-stripe borders as card decoration.
-- **Don't** hide units, quote side, event provenance, or timestamp context.
+- **Don't** make units, quote side, event provenance, or timestamp context unavailable. Event provenance may be collapsed or secondary, but it must stay discoverable.
 - **Don't** rely on red/green alone to communicate bid and ask.

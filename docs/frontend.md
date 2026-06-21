@@ -73,6 +73,7 @@ Current event behavior:
 
 - Parsed events remain accessible but hidden by default to preserve a book-first workstation.
 - The right edge reveal is intentionally subtle; do not expand it into a persistent full sidebar by default without a new design decision.
+- Event provenance can be secondary, but it must remain discoverable from the workstation.
 
 ## State Handling
 
@@ -94,16 +95,41 @@ Meaningful frontend flow requires E2E tests:
 
 - Send user message and see chat + parsed event + book update.
 - Start auto simulator and see live events.
-- Upload sample replay and see events.
 - Verify stale row muting after same broker/instrument/side replacement.
+
+Replay upload E2E coverage is still needed. Current replay behavior is implemented, but upload is not yet covered by the Playwright suite.
+
+## Component Pattern Diagnosis
+
+Current accepted exceptions:
+
+- `Input` is a native input wrapper with `suppressHydrationWarning`. This is out of pattern with fully composed Base UI field primitives, but it is currently accepted because browser/extensions can mutate input styles before hydration.
+- `NativeSelect` uses a native select plus a Tabler selector icon. This matches the current lightweight workstation style and avoids unnecessary select complexity.
+- `RightEdgeIndicator` is a bespoke hidden event-panel affordance. It is intentionally quieter than a collapsed sidebar container.
+- `BookQuoteRow` is a domain-specific market-data row, not a generic card/table abstraction.
+- Title-hover help uses shadcn/Base UI tooltip behavior without visible subtitle text or a `?` icon, per the current design decision.
+
+Items to revisit when polishing:
+
+- Replay upload still presents as a native file input; it should become a quieter button/label control while preserving native behavior.
+- Slider thumb styling contains a hardcoded white surface; this is acceptable in the current dark-only theme but should move to tokens if theme variability returns.
+- Empty book skeletons sit inside a dashed placeholder container. This is low-risk now, but can be flattened if the placeholder visual weight becomes too high.
 
 ## Future UI Backlog
 
-These are deferred design/UX items, not active scope:
+These are deferred design/UX items, not active scope. Order reflects current priority.
 
-- Add keyboard accelerators for send, simulator toggle, sidebar collapse, and event reveal.
-- Add a compact event/provenance hint near the book or after message send, without making the right sidebar visible by default.
-- Polish replay upload into a quieter button/label control while preserving native file behavior.
-- Add replay upload in-progress state.
-- Consider flattening empty book skeletons into a single low-emphasis strip if detector-clean placeholders become important.
-- Consider clear/reset affordances for raw messages and replay status.
+1. Add replay upload E2E coverage.
+   Acceptance: Playwright uploads a sample file, verifies events/book updates, and covers visible failure or status behavior.
+2. Add keyboard accelerators for send, simulator toggle, sidebar collapse, and event reveal.
+   Acceptance: shortcuts are documented in UI-facing docs and covered by interaction or E2E tests.
+3. Add a compact event/provenance hint near the book or after message send, without making the right sidebar visible by default.
+   Acceptance: users can discover parsed events from the book-first layout, and the right sidebar still defaults hidden.
+4. Polish replay upload into a quieter button/label control while preserving native file behavior.
+   Acceptance: upload affordance aligns with compact controls and keeps visible success/failure feedback.
+5. Add replay upload in-progress state.
+   Acceptance: uploading cannot appear idle while processing.
+6. Consider clear/reset affordances for raw messages and replay status.
+   Acceptance: reset behavior is explicit and does not erase book state accidentally.
+7. Consider flattening empty book skeletons into a single low-emphasis strip if detector-clean placeholders become important.
+   Acceptance: empty state remains understandable without reading as a nested card.
