@@ -112,6 +112,7 @@ FUZZY_EXCLUSION_TICKERS = {"PETR27"}
 Initial intended fuzzy positives after pool contains `PETRO27`:
 
 - `PETOR27` -> `PETRO27`
+- at least one non-Petrobras fuzzy-positive case selected from plan 005 chaos fixtures, only if false-merge metrics prove it safe
 
 Initial intended non-merges:
 
@@ -186,6 +187,7 @@ Add tests that prove:
 Add fixture rows for:
 
 - positive fuzzy correction: `petor27` after a prior `PETRO27` fixture in the same evaluator run -> `PETRO27`;
+- one non-Petrobras positive fuzzy correction only if plan 005 introduced a clear expected pair;
 - hard negative `PETR27` -> `PETR27`;
 - hard negative `BOVE26` with `forbidden_instrument_id: BOVA26`;
 - different suffix non-merge.
@@ -221,6 +223,7 @@ Update `docs/roadmap.md`:
 
 - [ ] Plan 005 is DONE.
 - [ ] `PETOR27` resolves to `PETRO27` only after `PETRO27` is already in the session pool.
+- [ ] At least one non-Petrobras fuzzy fixture is handled according to the plan 005 expectation, or explicitly deferred in `plans/README.md` with rationale.
 - [ ] `PETR27` remains distinct from `PETRO27`.
 - [ ] Different suffixes never fuzzy-merge.
 - [ ] Ambiguous candidates never fuzzy-merge.

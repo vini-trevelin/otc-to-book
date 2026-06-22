@@ -19,7 +19,7 @@ Completed work:
 
 ## Active Plans
 
-- `plans/005-chaotic-extraction-evaluation-and-simulator.md` - add chaotic fixtures, false-merge metrics, and simulator chaos controls before fuzzy matching.
+- `plans/005-chaotic-extraction-evaluation-and-simulator.md` - add chaotic fixtures, false-merge metrics, backend simulator chaos, and frontend chaos controls before fuzzy matching.
 - `plans/006-bounded-fuzzy-ticker-resolver.md` - implement conservative session-pool fuzzy ticker resolution after plan 005.
 
 ## Working Agreements

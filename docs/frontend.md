@@ -98,6 +98,10 @@ extraction in the browser, hold provider API keys, or submit arbitrary model
 server URLs. Any future API key workflow needs a separate backend-owned secret
 design before UI implementation.
 
+Simulator chaos controls are separate from extraction controls. They may expose
+backend simulator settings such as chaos, ticker typo, and template noise rates,
+but they must only send simulator config to the backend.
+
 ## E2E Expectations
 
 Meaningful frontend flow requires E2E tests:

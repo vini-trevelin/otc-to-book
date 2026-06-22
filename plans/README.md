@@ -8,14 +8,14 @@ starting, honor its STOP conditions, and update the status row when done.
 
 | Plan | Title | Priority | Effort | Depends on | Status |
 |------|-------|----------|--------|------------|--------|
-| 005 | Add chaotic extraction evaluation and simulator inputs | P1 | M | 002 | TODO |
+| 005 | Add chaotic extraction evaluation and simulator controls | P1 | M | 002 | TODO |
 | 006 | Implement bounded fuzzy ticker resolver | P1 | M | 005 | TODO |
 
 Status values: TODO | IN PROGRESS | DONE | BLOCKED (with one-line reason) | REJECTED (with one-line rationale).
 
 ## Dependency notes
 
-- 005 depends on 002 because chaotic fixtures and simulator chaos must extend the evaluator.
+- 005 depends on 002 because chaotic fixtures and simulator chaos controls must extend the evaluator.
 - 006 depends on 005 because bounded fuzzy matching needs hard-negative false-merge metrics first.
 
 ## Completed plan history
@@ -35,7 +35,7 @@ their full original handoff content.
 - The repo has no extraction quality metric harness. Current tests verify the happy-path fixture outputs but do not report ticker accuracy, false corrections, or rejection quality.
 - Fast fuzzy/LLM extraction is a valid roadmap direction, but it should be gated behind deterministic canonicalization and metrics. V1 docs explicitly choose deterministic extraction; future adapters are allowed, but not as unmeasured runtime behavior.
 - LLM provider configuration belongs in the backend, with the dashboard acting as a control plane only. Browser-owned API keys or arbitrary user-entered model server URLs would create security and correctness risk.
-- The simulator is too clean for fuzzy extraction work; V1.2 needs controlled chaotic positives and hard negatives before enabling fuzzy matching.
+- The simulator is too clean for fuzzy extraction work; V1.2 needs controlled chaotic positives, hard negatives, and opt-in frontend chaos controls before enabling fuzzy matching.
 - Bounded fuzzy matching can recover obvious session-pool near misses, but only after false-merge metrics exist.
 
 ## Findings considered and rejected
