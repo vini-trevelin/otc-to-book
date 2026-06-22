@@ -252,25 +252,25 @@ not extraction controls.
 
 ## Done criteria
 
-- [ ] Existing clean fixture rows still pass.
-- [ ] New chaotic positive rows pass.
-- [ ] New hard-negative rows do not false-merge.
-- [ ] Evaluator prints aggregate metrics and category metrics.
-- [ ] Simulator chaos defaults to off.
-- [ ] Simulator chaos is deterministic under seed.
-- [ ] `chaos_rate=1` modifies every generated quote message.
-- [ ] Chaos can affect non-Petrobras tickers.
-- [ ] Backend WebSocket simulator payload accepts chaos rates.
-- [ ] Frontend exposes opt-in chaos controls.
-- [ ] Chaos controls are covered by E2E.
-- [ ] `cd apps/api && uv run pytest` exits 0.
-- [ ] `cd apps/api && uv run ruff check .` exits 0.
-- [ ] `cd apps/api && uv run python -m compileall src tests scripts` exits 0.
-- [ ] `pnpm --filter api eval:extraction` exits 0.
-- [ ] `pnpm --filter web test:e2e` exits 0.
-- [ ] `pnpm test` exits 0.
-- [ ] `node scripts/check-exact-versions.mjs` exits 0.
-- [ ] `plans/README.md` status for plan 005 is updated.
+- [x] Existing clean fixture rows still pass.
+- [x] New chaotic positive rows pass.
+- [x] New hard-negative rows do not false-merge.
+- [x] Evaluator prints aggregate metrics and category metrics.
+- [x] Simulator chaos defaults to off.
+- [x] Simulator chaos is deterministic under seed.
+- [x] `chaos_rate=1` modifies every generated quote message.
+- [x] Chaos can affect non-Petrobras tickers.
+- [x] Backend WebSocket simulator payload accepts chaos rates.
+- [x] Frontend exposes opt-in chaos controls.
+- [x] Chaos controls are covered by E2E.
+- [x] `cd apps/api && uv run pytest` exits 0.
+- [x] `cd apps/api && uv run ruff check .` exits 0.
+- [x] `cd apps/api && uv run python -m compileall src tests scripts` exits 0.
+- [x] `pnpm --filter api eval:extraction` exits 0.
+- [x] `pnpm --filter web test:e2e` exits 0.
+- [x] `pnpm test` exits 0.
+- [x] `node scripts/check-exact-versions.mjs` exits 0.
+- [x] `plans/README.md` status for plan 005 is updated.
 
 ## STOP conditions
 

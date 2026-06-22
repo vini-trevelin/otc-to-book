@@ -44,6 +44,7 @@ their full original handoff content.
 - Plan 006 enabled bounded fuzzy matching against the session valid ticker pool only.
 - `PETOR27` merges to `PETRO27` only after `PETRO27` exists in the session pool.
 - `PETR27` and `BOVE26` are fuzzy exclusions; `BOVE26` must not merge into `BOVA26` before explicit acceptance.
+- Non-Petrobras fuzzy-positive fixtures are explicitly deferred until a safe accepted pair is chosen; this branch still covers non-Petrobras chaos and hard negatives with `VALE29`, `BOVA26`, and `BOVE26`.
 - Expanded evaluator output reports `exact_row=27/27` and `false_merge=3/3` on the current fixture set.
 
 ## Findings considered and rejected

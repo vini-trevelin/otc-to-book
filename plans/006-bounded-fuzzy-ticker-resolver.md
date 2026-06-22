@@ -222,19 +222,19 @@ Update `docs/roadmap.md`:
 
 ## Done criteria
 
-- [ ] Plan 005 is DONE.
-- [ ] `PETOR27` resolves to `PETRO27` only after `PETRO27` is already in the session pool.
-- [ ] At least one non-Petrobras fuzzy fixture is handled according to the plan 005 expectation, or explicitly deferred in `plans/README.md` with rationale.
-- [ ] `PETR27` remains distinct from `PETRO27`.
-- [ ] Different suffixes never fuzzy-merge.
-- [ ] Ambiguous candidates never fuzzy-merge.
-- [ ] Explicit aliases still take precedence.
-- [ ] `pnpm --filter api eval:extraction` reports exact accuracy 100% and false merges 0.
-- [ ] `cd apps/api && uv run pytest` exits 0.
-- [ ] `cd apps/api && uv run ruff check .` exits 0.
-- [ ] `cd apps/api && uv run python -m compileall src tests scripts` exits 0.
-- [ ] `node scripts/check-exact-versions.mjs` exits 0.
-- [ ] `plans/README.md` status for plan 006 is updated.
+- [x] Plan 005 is DONE.
+- [x] `PETOR27` resolves to `PETRO27` only after `PETRO27` is already in the session pool.
+- [x] At least one non-Petrobras fuzzy fixture is handled according to the plan 005 expectation, or explicitly deferred in `plans/README.md` with rationale.
+- [x] `PETR27` remains distinct from `PETRO27`.
+- [x] Different suffixes never fuzzy-merge.
+- [x] Ambiguous candidates never fuzzy-merge.
+- [x] Explicit aliases still take precedence.
+- [x] `pnpm --filter api eval:extraction` reports exact accuracy 100% and false merges 0.
+- [x] `cd apps/api && uv run pytest` exits 0.
+- [x] `cd apps/api && uv run ruff check .` exits 0.
+- [x] `cd apps/api && uv run python -m compileall src tests scripts` exits 0.
+- [x] `node scripts/check-exact-versions.mjs` exits 0.
+- [x] `plans/README.md` status for plan 006 is updated.
 
 ## STOP conditions
 
