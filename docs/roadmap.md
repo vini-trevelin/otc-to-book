@@ -19,10 +19,17 @@
 
 ## V1.2: Chaotic Evaluation And Bounded Fuzzy
 
-- Add chaotic extraction fixtures plus opt-in backend and frontend simulator chaos controls.
-- Track hard-negative false-merge metrics before enabling fuzzy matching.
-- Implement fast local fuzzy candidate extraction behind the evaluation harness.
-- Fuzzy matching must be bounded by the session valid ticker pool, explicit exclusions, and ambiguity checks.
+- Chaotic extraction fixtures plus backend and frontend simulator chaos controls.
+- Hard-negative false-merge metrics for tickers that must not consolidate.
+- Fast local fuzzy ticker resolution behind the evaluation harness.
+- Fuzzy matching is bounded by the session valid ticker pool, exact suffix match, explicit exclusions, and ambiguity checks.
+- Current fuzzy expansion remains deterministic and local; no LLM runtime behavior is included.
+
+Open follow-ups after V1.2:
+
+- Promote more real-world chaotic examples into fixtures from simulator or manual replay logs.
+- Review hard-negative exclusions before allowing additional ticker families to fuzzy merge.
+- Add a persistence-backed instrument master only after the session-pool behavior is measured.
 
 ## V1.3: Backend-Owned Provider Config
 

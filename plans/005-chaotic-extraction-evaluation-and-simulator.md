@@ -18,6 +18,7 @@
 - **Depends on**: completed plan 002 (extraction evaluation fixtures and metrics, merged in PR #2)
 - **Category**: tests
 - **Planned at**: commit `5d18b0d`, 2026-06-22
+- **Implementation note**: final branch includes plan 006, so `PETOR27` is a fuzzy-positive fixture after `PETRO27` exists; hard negatives remain `PETR27`, `BOVE26`, and same-root typo with different suffix.
 
 ## Why this matters
 

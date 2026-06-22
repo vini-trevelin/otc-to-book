@@ -12,3 +12,16 @@
 {"message_id":"sample-012","broker_id":"BROKER_B","received_timestamp":"2026-06-19T12:00:11Z","text":"bid petrro27 7.28"}
 {"message_id":"sample-013","broker_id":"BROKER_C","received_timestamp":"2026-06-19T12:00:12Z","text":"4mm petr027 @733"}
 {"message_id":"sample-014","broker_id":"BROKER_A","received_timestamp":"2026-06-19T12:00:13Z","text":"vendo vale29 7.40 3mm"}
+{"message_id":"sample-015","broker_id":"BROKER_A","received_timestamp":"2026-06-19T12:00:14Z","text":"vendo   petro27   7.30   5mm"}
+{"message_id":"sample-016","broker_id":"BROKER_B","received_timestamp":"2026-06-19T12:00:15Z","text":"vendo petro27 7,30 5mm"}
+{"message_id":"sample-017","broker_id":"BROKER_C","received_timestamp":"2026-06-19T12:00:16Z","text":"pEtRo27 offer 7.31 size 4"}
+{"message_id":"sample-018","broker_id":"BROKER_A","received_timestamp":"2026-06-19T12:00:17Z","text":"tomo petro27 até 7.26"}
+{"message_id":"sample-019","broker_id":"BROKER_B","received_timestamp":"2026-06-19T12:00:18Z","text":"vendo vale29 7,40 3mm"}
+{"message_id":"sample-020","broker_id":"BROKER_C","received_timestamp":"2026-06-19T12:00:19Z","text":"BOVA26 OFFER 7.50 SIZE 2"}
+{"message_id":"sample-021","broker_id":"BROKER_A","received_timestamp":"2026-06-19T12:00:20Z","text":"PETR27 OFFER 7.31 SIZE 4"}
+{"message_id":"sample-022","broker_id":"BROKER_B","received_timestamp":"2026-06-19T12:00:21Z","text":"vendo petor27 7.30 5mm"}
+{"message_id":"sample-023","broker_id":"BROKER_C","received_timestamp":"2026-06-19T12:00:22Z","text":"vendo bove26 7.50 2mm"}
+{"message_id":"sample-024","broker_id":"BROKER_A","received_timestamp":"2026-06-19T12:00:23Z","text":"vendo petro 27 7.30 5mm"}
+{"message_id":"sample-025","broker_id":"BROKER_B","received_timestamp":"2026-06-19T12:00:24Z","text":"vendo petro27 mercado firme"}
+{"message_id":"sample-026","broker_id":"BROKER_C","received_timestamp":"2026-06-19T12:00:25Z","text":"petro27 7.30 5mm maybe"}
+{"message_id":"sample-027","broker_id":"BROKER_A","received_timestamp":"2026-06-19T12:00:26Z","text":"vendo petor28 7.30 1mm"}

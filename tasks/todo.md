@@ -6,7 +6,7 @@ Status values: TODO | IN PROGRESS | DONE | BLOCKED.
 
 V1 implementation, UI polish, and extractor evaluation are complete and merged to `main`.
 
-Active planning branch: `feat/fuzzy_extraction_implementation`.
+Active implementation branch: `feat/fuzzy_extraction_implementation`.
 
 Completed work:
 
@@ -16,11 +16,18 @@ Completed work:
 - Full verification and current docs.
 - UI polish branch: collapsible sidebars, book-first layout, compact book rows, 24-hour times, static muted placeholders, fixed-height chat feed, and shadcn-style title tooltips/skeletons.
 - Extractor evaluation branch: session-scoped valid ticker pool, explicit ticker aliases, extraction metrics, fixture rows, and backend-owned future provider docs.
+- Fuzzy extraction branch: chaotic fixture categories, false-merge metrics, simulator chaos controls, and bounded session-pool fuzzy ticker resolution.
 
 ## Active Plans
 
-- `plans/005-chaotic-extraction-evaluation-and-simulator.md` - add chaotic fixtures, false-merge metrics, backend simulator chaos, and frontend chaos controls before fuzzy matching.
-- `plans/006-bounded-fuzzy-ticker-resolver.md` - implement conservative session-pool fuzzy ticker resolution after plan 005.
+- `plans/005-chaotic-extraction-evaluation-and-simulator.md` - DONE.
+- `plans/006-bounded-fuzzy-ticker-resolver.md` - DONE.
+
+## Review Results
+
+- Current extractor evaluation reports `exact_row=27/27` and `false_merge=3/3`.
+- Fuzzy matching is local and deterministic: aliases first, exact pool hit second, then bounded one-edit/adjacent-transposition match against the session pool only.
+- Frontend chaos controls are exposed as simulator inputs only; backend remains the owner of generated messages and extraction behavior.
 
 ## Working Agreements
 

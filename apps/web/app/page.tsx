@@ -46,6 +46,9 @@ export default function WorkstationPage() {
   const [brokerId, setBrokerId] = useState("BROKER_A");
   const [randomness, setRandomness] = useState(3);
   const [noiseRate, setNoiseRate] = useState(0.2);
+  const [chaosRate, setChaosRate] = useState(0);
+  const [tickerTypoRate, setTickerTypoRate] = useState(0);
+  const [templateNoiseRate, setTemplateNoiseRate] = useState(0);
   const [intervalMs, setIntervalMs] = useState(1000);
   const [uploadStatus, setUploadStatus] = useState<string>("");
   const [uploadError, setUploadError] = useState<string>("");
@@ -93,7 +96,14 @@ export default function WorkstationPage() {
     dispatch({ type: "simulator", running: true });
     sendClientEvent({
       event_type: "simulator_start",
-      payload: { randomness, noise_rate: noiseRate, interval_ms: intervalMs }
+      payload: {
+        randomness,
+        noise_rate: noiseRate,
+        chaos_rate: chaosRate,
+        ticker_typo_rate: tickerTypoRate,
+        template_noise_rate: templateNoiseRate,
+        interval_ms: intervalMs
+      }
     });
   }
 
@@ -209,6 +219,32 @@ export default function WorkstationPage() {
                       step={250}
                       suffix="ms"
                       value={intervalMs}
+                    />
+                  </div>
+                  <div className="grid grid-cols-3 gap-2">
+                    <NumberStepper
+                      label="Chaos"
+                      max={1}
+                      min={0}
+                      onChange={setChaosRate}
+                      step={0.1}
+                      value={chaosRate}
+                    />
+                    <NumberStepper
+                      label="Ticker typo"
+                      max={1}
+                      min={0}
+                      onChange={setTickerTypoRate}
+                      step={0.1}
+                      value={tickerTypoRate}
+                    />
+                    <NumberStepper
+                      label="Template noise"
+                      max={1}
+                      min={0}
+                      onChange={setTemplateNoiseRate}
+                      step={0.1}
+                      value={templateNoiseRate}
                     />
                   </div>
                   <Button

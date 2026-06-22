@@ -29,6 +29,9 @@ Auto controls:
 
 - randomness meter: 1 to 5.
 - noise rate stepper.
+- chaos rate stepper.
+- ticker typo rate stepper.
+- template noise rate stepper.
 - step interval control.
 - start/stop.
 
@@ -39,6 +42,7 @@ Current chat behavior:
 - Left panel groups controls as Connect, Simulate, Insert, and Chat.
 - Connect is a muted placeholder for future broker chat integrations.
 - Simulate uses a single start/stop button.
+- Simulate exposes backend-owned chaos controls for evaluation data generation; the browser only sends rates and does not classify tickers.
 - Chat feed has a fixed-height scroll area; raw messages must not grow the sidebar indefinitely.
 - Empty/future-state placeholders use static shadcn-style skeletons with muted contrast.
 

@@ -85,6 +85,9 @@ async def websocket_endpoint(websocket: WebSocket) -> None:
                 config = SimulatorConfig(
                     randomness=int(payload.get("randomness", 3)),
                     noise_rate=float(payload.get("noise_rate", 0.2)),
+                    chaos_rate=float(payload.get("chaos_rate", 0)),
+                    ticker_typo_rate=float(payload.get("ticker_typo_rate", 0)),
+                    template_noise_rate=float(payload.get("template_noise_rate", 0)),
                     broker_ids=tuple(
                         payload.get("broker_ids") or ("BROKER_A", "BROKER_B", "BROKER_C")
                     ),

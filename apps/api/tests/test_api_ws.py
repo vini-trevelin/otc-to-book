@@ -31,3 +31,26 @@ def test_websocket_user_message_flow() -> None:
         "book_updated",
     ]
     assert events[-1]["payload"]["books"]["PETRO27"]["best_ask"] is not None
+
+
+def test_websocket_simulator_start_accepts_chaos_payload() -> None:
+    with TestClient(app) as client:
+        with client.websocket_connect("/ws") as websocket:
+            websocket.send_json(
+                {
+                    "event_type": "simulator_start",
+                    "payload": {
+                        "randomness": 3,
+                        "noise_rate": 0,
+                        "chaos_rate": 1,
+                        "ticker_typo_rate": 1,
+                        "template_noise_rate": 1,
+                        "interval_ms": 1000,
+                        "seed": 7,
+                    },
+                }
+            )
+            first_event = websocket.receive_json()
+            websocket.send_json({"event_type": "simulator_stop", "payload": {}})
+
+    assert first_event["event_type"] == "message_received"

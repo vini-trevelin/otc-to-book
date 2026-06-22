@@ -37,6 +37,8 @@ CANONICAL_TICKER_ALIASES = {
     "PETRRO27": "PETRO27",
     "PETR027": "PETRO27",
 }
+FUZZY_EXCLUSION_TICKERS = frozenset({"PETR27", "BOVE26"})
+TICKER_PARTS_PATTERN = re.compile(r"^(?P<root>[A-Z]+)(?P<suffix>\d+)$")
 
 
 def normalize_for_matching(text: str) -> str:
@@ -49,8 +51,16 @@ def normalize_instrument(raw_ticker: str) -> str:
 
 
 class TickerResolver:
-    def __init__(self, aliases: dict[str, str] | None = None) -> None:
+    def __init__(
+        self,
+        aliases: dict[str, str] | None = None,
+        *,
+        enable_fuzzy: bool = True,
+        fuzzy_exclusions: set[str] | frozenset[str] | None = None,
+    ) -> None:
         self._aliases = aliases or CANONICAL_TICKER_ALIASES
+        self._enable_fuzzy = enable_fuzzy
+        self._fuzzy_exclusions = frozenset(fuzzy_exclusions or FUZZY_EXCLUSION_TICKERS)
         self._valid_tickers: set[str] = set()
 
     @property
@@ -59,9 +69,86 @@ class TickerResolver:
 
     def resolve(self, raw_ticker: str) -> str:
         normalized = normalize_instrument(raw_ticker)
-        instrument_id = self._aliases.get(normalized, normalized)
-        self._valid_tickers.add(instrument_id)
-        return instrument_id
+        aliased = self._aliases.get(normalized)
+        if aliased is not None:
+            self._valid_tickers.add(aliased)
+            return aliased
+
+        if normalized in self._valid_tickers:
+            return normalized
+
+        fuzzy_match = self._resolve_fuzzy(normalized)
+        if fuzzy_match is not None:
+            return fuzzy_match
+
+        self._valid_tickers.add(normalized)
+        return normalized
+
+    def _resolve_fuzzy(self, normalized: str) -> str | None:
+        if not self._enable_fuzzy:
+            return None
+        if normalized in self._fuzzy_exclusions:
+            return None
+        if normalized in set(self._aliases.values()):
+            return None
+
+        ticker_parts = _split_ticker(normalized)
+        if ticker_parts is None:
+            return None
+        root, suffix = ticker_parts
+        if len(root) < 4:
+            return None
+
+        matches = []
+        for candidate in sorted(self._valid_tickers):
+            if candidate in self._fuzzy_exclusions:
+                continue
+            candidate_parts = _split_ticker(candidate)
+            if candidate_parts is None:
+                continue
+            candidate_root, candidate_suffix = candidate_parts
+            if suffix != candidate_suffix or len(candidate_root) < 4:
+                continue
+            if _levenshtein_distance(root, candidate_root) == 1:
+                matches.append(candidate)
+
+        if len(matches) == 1:
+            return matches[0]
+        return None
+
+
+def _split_ticker(normalized: str) -> tuple[str, str] | None:
+    match = TICKER_PARTS_PATTERN.match(normalized)
+    if match is None:
+        return None
+    return match.group("root"), match.group("suffix")
+
+
+def _levenshtein_distance(left: str, right: str) -> int:
+    if left == right:
+        return 0
+    if len(left) == len(right):
+        for index in range(len(left) - 1):
+            swapped = f"{left[:index]}{left[index + 1]}{left[index]}{left[index + 2:]}"
+            if swapped == right:
+                return 1
+    if len(left) < len(right):
+        left, right = right, left
+
+    previous = list(range(len(right) + 1))
+    for left_index, left_char in enumerate(left, start=1):
+        current = [left_index]
+        for right_index, right_char in enumerate(right, start=1):
+            substitution_cost = 0 if left_char == right_char else 1
+            current.append(
+                min(
+                    previous[right_index] + 1,
+                    current[right_index - 1] + 1,
+                    previous[right_index - 1] + substitution_cost,
+                )
+            )
+        previous = current
+    return previous[-1]
 
 
 def parse_decimal(value: str, *, compact: bool = False) -> Decimal:

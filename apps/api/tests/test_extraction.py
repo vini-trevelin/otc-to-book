@@ -89,3 +89,72 @@ def test_ticker_pool_is_scoped_to_resolver_instance(raw_message) -> None:
 
     assert first.valid_tickers == frozenset({"VALE29"})
     assert second.valid_tickers == frozenset()
+
+
+def test_bounded_fuzzy_resolves_single_candidate_after_canonical_exists(raw_message) -> None:
+    extractor = DeterministicQuoteExtractor()
+
+    extractor.extract(raw_message("vendo petro27 7.30 5mm", message_id="canonical"))
+    result = extractor.extract(raw_message("vendo petor27 7.31 2mm", message_id="fuzzy"))
+
+    assert result.candidate is not None
+    assert result.candidate.raw_ticker == "petor27"
+    assert result.candidate.instrument_id == "PETRO27"
+
+
+def test_bounded_fuzzy_does_not_guess_before_canonical_exists(raw_message) -> None:
+    result = DeterministicQuoteExtractor().extract(raw_message("vendo petor27 7.31 2mm"))
+
+    assert result.candidate is not None
+    assert result.candidate.instrument_id == "PETOR27"
+
+
+def test_bounded_fuzzy_can_be_disabled(raw_message) -> None:
+    resolver = TickerResolver(enable_fuzzy=False)
+    extractor = DeterministicQuoteExtractor(ticker_resolver=resolver)
+
+    extractor.extract(raw_message("vendo petro27 7.30 5mm", message_id="canonical"))
+    result = extractor.extract(raw_message("vendo petor27 7.31 2mm", message_id="fuzzy"))
+
+    assert result.candidate is not None
+    assert result.candidate.instrument_id == "PETOR27"
+    assert resolver.valid_tickers == frozenset({"PETRO27", "PETOR27"})
+
+
+def test_bounded_fuzzy_preserves_excluded_tickers(raw_message) -> None:
+    extractor = DeterministicQuoteExtractor()
+
+    extractor.extract(raw_message("vendo petro27 7.30 5mm", message_id="petro"))
+    petr = extractor.extract(raw_message("PETR27 OFFER 7.31 SIZE 4", message_id="petr"))
+
+    assert petr.candidate is not None
+    assert petr.candidate.instrument_id == "PETR27"
+
+
+def test_bounded_fuzzy_requires_matching_numeric_suffix(raw_message) -> None:
+    extractor = DeterministicQuoteExtractor()
+
+    extractor.extract(raw_message("vendo petro27 7.30 5mm", message_id="canonical"))
+    result = extractor.extract(raw_message("vendo petor28 7.31 2mm", message_id="suffix"))
+
+    assert result.candidate is not None
+    assert result.candidate.instrument_id == "PETOR28"
+
+
+def test_bounded_fuzzy_keeps_ambiguous_matches_separate() -> None:
+    resolver = TickerResolver(aliases={"PETRAA27": "PETRA27"})
+
+    assert resolver.resolve("petro27") == "PETRO27"
+    assert resolver.resolve("petraa27") == "PETRA27"
+    assert resolver.resolve("petri27") == "PETRI27"
+
+
+def test_explicit_aliases_run_before_bounded_fuzzy(raw_message) -> None:
+    resolver = TickerResolver()
+    extractor = DeterministicQuoteExtractor(ticker_resolver=resolver)
+
+    extractor.extract(raw_message("vendo petr27 7.30 5mm", message_id="distinct"))
+    result = extractor.extract(raw_message("vendo petr027 7.32 2mm", message_id="alias"))
+
+    assert result.candidate is not None
+    assert result.candidate.instrument_id == "PETRO27"

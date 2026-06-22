@@ -8,8 +8,8 @@ starting, honor its STOP conditions, and update the status row when done.
 
 | Plan | Title | Priority | Effort | Depends on | Status |
 |------|-------|----------|--------|------------|--------|
-| 005 | Add chaotic extraction evaluation and simulator controls | P1 | M | 002 | TODO |
-| 006 | Implement bounded fuzzy ticker resolver | P1 | M | 005 | TODO |
+| 005 | Add chaotic extraction evaluation and simulator controls | P1 | M | 002 | DONE |
+| 006 | Implement bounded fuzzy ticker resolver | P1 | M | 005 | DONE |
 
 Status values: TODO | IN PROGRESS | DONE | BLOCKED (with one-line reason) | REJECTED (with one-line rationale).
 
@@ -37,6 +37,14 @@ their full original handoff content.
 - LLM provider configuration belongs in the backend, with the dashboard acting as a control plane only. Browser-owned API keys or arbitrary user-entered model server URLs would create security and correctness risk.
 - The simulator is too clean for fuzzy extraction work; V1.2 needs controlled chaotic positives, hard negatives, and opt-in frontend chaos controls before enabling fuzzy matching.
 - Bounded fuzzy matching can recover obvious session-pool near misses, but only after false-merge metrics exist.
+
+## Implementation notes
+
+- Plan 005 added chaotic positive, hard-negative, and rejection fixture categories plus simulator chaos controls.
+- Plan 006 enabled bounded fuzzy matching against the session valid ticker pool only.
+- `PETOR27` merges to `PETRO27` only after `PETRO27` exists in the session pool.
+- `PETR27` and `BOVE26` are fuzzy exclusions; `BOVE26` must not merge into `BOVA26` before explicit acceptance.
+- Expanded evaluator output reports `exact_row=27/27` and `false_merge=3/3` on the current fixture set.
 
 ## Findings considered and rejected
 

@@ -12,3 +12,16 @@
 {"message_id":"sample-012","expected_type":"quote","instrument_id":"PETRO27","side":"BID","quote_value":"7.28","quote_value_type":"PRICE","quantity":"1","quantity_unit":"MM"}
 {"message_id":"sample-013","expected_type":"quote","instrument_id":"PETRO27","side":"ASK","quote_value":"7.33","quote_value_type":"PRICE","quantity":"4","quantity_unit":"MM"}
 {"message_id":"sample-014","expected_type":"quote","instrument_id":"VALE29","side":"ASK","quote_value":"7.40","quote_value_type":"PRICE","quantity":"3","quantity_unit":"MM"}
+{"message_id":"sample-015","expected_type":"quote","category":"chaotic_positive","instrument_id":"PETRO27","side":"ASK","quote_value":"7.30","quote_value_type":"PRICE","quantity":"5","quantity_unit":"MM"}
+{"message_id":"sample-016","expected_type":"quote","category":"chaotic_positive","instrument_id":"PETRO27","side":"ASK","quote_value":"7.30","quote_value_type":"PRICE","quantity":"5","quantity_unit":"MM"}
+{"message_id":"sample-017","expected_type":"quote","category":"chaotic_positive","instrument_id":"PETRO27","side":"ASK","quote_value":"7.31","quote_value_type":"PRICE","quantity":"4","quantity_unit":"MM"}
+{"message_id":"sample-018","expected_type":"quote","category":"chaotic_positive","instrument_id":"PETRO27","side":"BID","quote_value":"7.26","quote_value_type":"PRICE","quantity":"1","quantity_unit":"MM"}
+{"message_id":"sample-019","expected_type":"quote","category":"chaotic_positive","instrument_id":"VALE29","side":"ASK","quote_value":"7.40","quote_value_type":"PRICE","quantity":"3","quantity_unit":"MM"}
+{"message_id":"sample-020","expected_type":"quote","category":"chaotic_positive","instrument_id":"BOVA26","side":"ASK","quote_value":"7.50","quote_value_type":"PRICE","quantity":"2","quantity_unit":"MM"}
+{"message_id":"sample-021","expected_type":"quote","category":"hard_negative","instrument_id":"PETR27","forbidden_instrument_id":"PETRO27","side":"ASK","quote_value":"7.31","quote_value_type":"PRICE","quantity":"4","quantity_unit":"MM"}
+{"message_id":"sample-022","expected_type":"quote","category":"chaotic_positive","instrument_id":"PETRO27","side":"ASK","quote_value":"7.30","quote_value_type":"PRICE","quantity":"5","quantity_unit":"MM"}
+{"message_id":"sample-023","expected_type":"quote","category":"hard_negative","instrument_id":"BOVE26","forbidden_instrument_id":"BOVA26","side":"ASK","quote_value":"7.50","quote_value_type":"PRICE","quantity":"2","quantity_unit":"MM"}
+{"message_id":"sample-024","expected_type":"rejection","category":"rejection","reason":"NO_QUOTE_DETECTED"}
+{"message_id":"sample-025","expected_type":"rejection","category":"rejection","reason":"NO_QUOTE_DETECTED"}
+{"message_id":"sample-026","expected_type":"rejection","category":"rejection","reason":"NO_QUOTE_DETECTED"}
+{"message_id":"sample-027","expected_type":"quote","category":"hard_negative","instrument_id":"PETOR28","forbidden_instrument_id":"PETRO27","side":"ASK","quote_value":"7.30","quote_value_type":"PRICE","quantity":"1","quantity_unit":"MM"}

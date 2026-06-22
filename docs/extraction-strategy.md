@@ -31,7 +31,7 @@ Extractor does not create `QuoteRejected`. Rejection belongs to the validation/a
 V1 implementation:
 
 - `DeterministicQuoteExtractor`
-- session-scoped `TickerResolver` for explicit aliases and valid ticker discovery
+- session-scoped `TickerResolver` for explicit aliases, bounded fuzzy matching, and valid ticker discovery
 
 Future adapters:
 
@@ -62,7 +62,9 @@ deterministically:
 raw_ticker
   -> uppercase lexical normalization
   -> explicit alias map
-  -> session valid ticker pool
+  -> exact session valid ticker pool lookup
+  -> bounded fuzzy lookup against the session valid ticker pool
+  -> new session valid ticker
   -> QuoteCandidate.instrument_id
 ```
 
@@ -72,7 +74,11 @@ Rules:
 - `PETR27` remains distinct from `PETRO27`;
 - unknown valid-looking tickers become new valid tickers in the running backend session;
 - the pool is in-memory only and does not persist across restarts;
-- no edit-distance fuzzy merge runs in V1.
+- bounded fuzzy matching is enabled after explicit aliases and exact pool lookup;
+- fuzzy candidates come only from the current session valid ticker pool;
+- fuzzy matching requires an exact numeric suffix match, alphabetic roots of at least four characters, and exactly one root edit, including one adjacent transposition;
+- ambiguous fuzzy matches are not merged and instead create a new session ticker;
+- hard-negative exclusions currently include `PETR27` and `BOVE26`.
 
 ## Price Normalization
 
@@ -107,18 +113,18 @@ Broker
   -> Book
 ```
 
-Future fuzzy/LLM stages must remain behind the `QuoteExtractor` interface and
+Future LLM stages must remain behind the `QuoteExtractor` interface and
 must be gated by extraction metrics. Deterministic parsing and ticker resolution
-run first. Bounded fuzzy extraction may later propose candidates only from a known
-canonical universe or alias set. Optional LLM fallback may run only after
+run first. Bounded fuzzy extraction proposes candidates only from the session
+valid ticker pool and is measured by false-merge fixtures. Optional LLM fallback may run only after
 deterministic and fuzzy stages fail or produce low confidence, and must use
 structured output, a bounded timeout, and the same `QuoteValidator` gate before
 book updates.
 
-Before fuzzy matching is enabled, the evaluation set must include chaotic
-positive examples and hard-negative false-merge examples. Initial bounded fuzzy
-rules should require an exact numeric suffix match, a very small alphabetic-root
-edit distance, explicit exclusions such as `PETR27`, and zero ambiguous matches.
+The evaluation set includes clean examples, chaotic positive examples,
+hard-negative false-merge examples, and rejection examples. Fuzzy quality is
+tracked by exact-row accuracy and false-merge counts; false merges must remain
+zero before expanding fuzzy coverage.
 
 Future provider configuration is backend-owned. The frontend may select from
 backend-advertised provider profiles, but it must not hold API keys or submit

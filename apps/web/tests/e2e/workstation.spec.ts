@@ -79,6 +79,11 @@ test("ticker aliases consolidate while new tickers create separate books", async
   await expect(page.getByTestId("book-card-PETRO27")).toBeVisible();
   await expect(page.getByTestId("book-card-PETROO27")).toHaveCount(0);
 
+  await page.getByLabel("Message").fill("bid petor27 7.29");
+  await page.getByRole("button", { name: "Send" }).click();
+  await expect(page.getByTestId("book-row-active").filter({ hasText: "7.29" }).first()).toBeVisible();
+  await expect(page.getByTestId("book-card-PETOR27")).toHaveCount(0);
+
   await page.getByLabel("Message").fill("vendo vale29 7.40 3mm");
   await page.getByRole("button", { name: "Send" }).click();
   await expect(page.getByTestId("book-card-PETRO27")).toBeVisible();
@@ -89,6 +94,9 @@ test("auto simulator starts", async ({ page }) => {
   await page.goto("/");
 
   await expect(page.getByText("connected")).toBeVisible();
+  await page.getByRole("textbox", { name: "Chaos" }).fill("1");
+  await page.getByRole("textbox", { name: "Ticker typo" }).fill("1");
+  await page.getByRole("textbox", { name: "Template noise" }).fill("1");
   await expandParsedEvents(page);
   await page.getByRole("button", { name: "Start simulation" }).click();
 

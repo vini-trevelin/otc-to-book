@@ -18,6 +18,7 @@
 - **Depends on**: `plans/005-chaotic-extraction-evaluation-and-simulator.md`
 - **Category**: bug
 - **Planned at**: commit `5d18b0d`, 2026-06-22
+- **Implementation note**: implemented with `PETR27` and `BOVE26` as fuzzy exclusions so `BOVE26` cannot silently merge into `BOVA26` before explicit acceptance.
 
 ## Why this matters
 
@@ -106,7 +107,7 @@ Eligibility rule:
 Initial exclusions:
 
 ```python
-FUZZY_EXCLUSION_TICKERS = {"PETR27"}
+FUZZY_EXCLUSION_TICKERS = {"PETR27", "BOVE26"}
 ```
 
 Initial intended fuzzy positives after pool contains `PETRO27`:
