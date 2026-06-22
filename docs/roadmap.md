@@ -4,11 +4,30 @@
 
 - Chat simulator with User and Auto modes.
 - Deterministic quote extraction.
+- Session-scoped valid ticker pool with explicit alias canonicalization.
 - Pydantic schemas.
 - Validation.
 - In-memory book with active/stale rows.
 - Real-time workstation UI.
 - Unit, integration, and E2E tests.
+
+## V1.1: Extractor Evaluation
+
+- Deterministic ticker alias regression fixtures.
+- Extraction evaluation command with ticker, side, quote value, quantity, rejection reason, and exact-row metrics.
+- No fuzzy matching or LLM runtime behavior.
+
+## V1.2: Bounded Fuzzy Design
+
+Plan fast local fuzzy candidate extraction behind the evaluation harness.
+Fuzzy matching must be bounded by a known canonical universe or alias set and
+must prioritize false-positive control.
+
+## V1.3: Backend-Owned Provider Config
+
+Design optional Ollama/OpenAI-compatible LLM fallback as backend-owned provider
+profiles. The dashboard may select from safe profiles, but API keys, model server
+URLs, allowlists, timeouts, and validation remain backend responsibilities.
 
 ## Phase 2: Multiple Brokers
 
@@ -35,6 +54,7 @@ Desired future:
 Broker
   -> Broker Classifier
   -> Deterministic Parser
+  -> Bounded Fuzzy Candidate Extractor
   -> Fallback LLM
   -> Book
 ```

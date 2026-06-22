@@ -4,7 +4,7 @@ from decimal import Decimal
 
 import pytest
 
-from otc_to_book.domain.extraction import DeterministicQuoteExtractor
+from otc_to_book.domain.extraction import DeterministicQuoteExtractor, TickerResolver
 from otc_to_book.domain.models import QuoteSide, RejectionReason
 
 
@@ -42,3 +42,50 @@ def test_noise_returns_extraction_result_without_candidate(raw_message) -> None:
 
     assert result.candidate is None
     assert result.errors == (RejectionReason.NO_QUOTE_DETECTED,)
+
+
+@pytest.mark.parametrize(
+    "text",
+    ["vendo petroo27 7.30 5mm", "bid petrro27 7.25", "5mm petr027 @730"],
+)
+def test_explicit_ticker_aliases_resolve_to_canonical_instrument(raw_message, text: str) -> None:
+    result = DeterministicQuoteExtractor().extract(raw_message(text))
+
+    assert result.candidate is not None
+    assert result.candidate.raw_ticker in text
+    assert result.candidate.instrument_id == "PETRO27"
+
+
+def test_petr27_remains_distinct_from_petro27(raw_message) -> None:
+    extractor = DeterministicQuoteExtractor()
+
+    petro = extractor.extract(raw_message("vendo petro27 7.30 5mm", message_id="petro"))
+    petr = extractor.extract(raw_message("PETR27 OFFER 7.31 SIZE 4", message_id="petr"))
+
+    assert petro.candidate is not None
+    assert petr.candidate is not None
+    assert petro.candidate.instrument_id == "PETRO27"
+    assert petr.candidate.instrument_id == "PETR27"
+
+
+def test_unknown_valid_ticker_is_added_to_session_pool(raw_message) -> None:
+    resolver = TickerResolver()
+    extractor = DeterministicQuoteExtractor(ticker_resolver=resolver)
+
+    result = extractor.extract(raw_message("vendo vale29 7.30 5mm"))
+
+    assert result.candidate is not None
+    assert result.candidate.raw_ticker == "vale29"
+    assert result.candidate.instrument_id == "VALE29"
+    assert "VALE29" in resolver.valid_tickers
+    assert "PETRO27" not in resolver.valid_tickers
+
+
+def test_ticker_pool_is_scoped_to_resolver_instance(raw_message) -> None:
+    first = TickerResolver()
+    second = TickerResolver()
+
+    DeterministicQuoteExtractor(ticker_resolver=first).extract(raw_message("vendo vale29 7.30 5mm"))
+
+    assert first.valid_tickers == frozenset({"VALE29"})
+    assert second.valid_tickers == frozenset()

@@ -8,3 +8,7 @@
 {"message_id":"sample-008","broker_id":"BROKER_C","received_timestamp":"2026-06-19T12:00:07Z","text":"call me"}
 {"message_id":"sample-009","broker_id":"BROKER_A","received_timestamp":"2026-06-19T12:00:08Z","text":"alguem tem fluxo?"}
 {"message_id":"sample-010","broker_id":"BROKER_C","received_timestamp":"2026-06-19T12:00:09Z","text":"bid petro27 7.27"}
+{"message_id":"sample-011","broker_id":"BROKER_A","received_timestamp":"2026-06-19T12:00:10Z","text":"vendo petroo27 7.32 2mm"}
+{"message_id":"sample-012","broker_id":"BROKER_B","received_timestamp":"2026-06-19T12:00:11Z","text":"bid petrro27 7.28"}
+{"message_id":"sample-013","broker_id":"BROKER_C","received_timestamp":"2026-06-19T12:00:12Z","text":"4mm petr027 @733"}
+{"message_id":"sample-014","broker_id":"BROKER_A","received_timestamp":"2026-06-19T12:00:13Z","text":"vendo vale29 7.40 3mm"}

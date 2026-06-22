@@ -9,6 +9,7 @@ V1 uses deterministic-first extraction behind a `QuoteExtractor` interface. LLM 
 ```text
 RawMessage
   -> QuoteExtractor
+  -> TickerResolver
   -> QuoteCandidate
   -> QuoteValidator
   -> QuoteEvent | QuoteRejected
@@ -25,6 +26,7 @@ The backend owns:
 - Auto simulator.
 - Sample replay parsing.
 - Extraction.
+- Session-scoped ticker resolution.
 - Validation.
 - Book state.
 - Event broadcasting.
@@ -34,6 +36,10 @@ The frontend owns:
 - Controls for user input and simulator params.
 - Rendering chat, parsed events, and book state.
 - Client-side connection state and UI errors.
+
+The frontend does not own extraction decisions, provider API keys, or direct
+model-server calls. Future fuzzy or LLM provider configuration must be validated
+and applied by the backend; dashboard controls are a control plane only.
 
 ## API Shape
 
@@ -136,5 +142,6 @@ V1 should leave clean extension points for:
 - LLM fallback extractor.
 - Quote lifecycle events.
 - Evaluation datasets and parser metrics.
+- Backend-owned extraction provider profiles with URL allowlists, timeouts, and secret references.
 
 Do not implement those future phases in V1.

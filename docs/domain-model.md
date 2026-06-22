@@ -33,7 +33,14 @@ Example:
 
 - raw `petro27` -> instrument `PETRO27`
 
-Do not add a full instrument master in V1. Keep the field shape compatible with one later.
+V1 uses a session-scoped valid ticker pool:
+
+- When a valid-looking ticker is first extracted and does not match an explicit alias, its normalized uppercase identifier is added to the running backend session pool.
+- Explicit aliases collapse known typo variants before book construction, for example `PETROO27`, `PETRRO27`, and `PETR027` -> `PETRO27`.
+- `PETR27` remains a distinct valid instrument from `PETRO27`.
+- The pool is in-memory only and resets with the backend process.
+
+Do not add a full persistent instrument master in V1. Keep the field shape compatible with one later.
 
 ## Quote Value
 

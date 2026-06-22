@@ -32,6 +32,13 @@ class TemplateRule:
     default_quantity: Decimal | None = None
 
 
+CANONICAL_TICKER_ALIASES = {
+    "PETROO27": "PETRO27",
+    "PETRRO27": "PETRO27",
+    "PETR027": "PETRO27",
+}
+
+
 def normalize_for_matching(text: str) -> str:
     normalized = unicodedata.normalize("NFKD", text)
     return "".join(ch for ch in normalized if not unicodedata.combining(ch)).strip()
@@ -39,6 +46,22 @@ def normalize_for_matching(text: str) -> str:
 
 def normalize_instrument(raw_ticker: str) -> str:
     return raw_ticker.strip().upper()
+
+
+class TickerResolver:
+    def __init__(self, aliases: dict[str, str] | None = None) -> None:
+        self._aliases = aliases or CANONICAL_TICKER_ALIASES
+        self._valid_tickers: set[str] = set()
+
+    @property
+    def valid_tickers(self) -> frozenset[str]:
+        return frozenset(self._valid_tickers)
+
+    def resolve(self, raw_ticker: str) -> str:
+        normalized = normalize_instrument(raw_ticker)
+        instrument_id = self._aliases.get(normalized, normalized)
+        self._valid_tickers.add(instrument_id)
+        return instrument_id
 
 
 def parse_decimal(value: str, *, compact: bool = False) -> Decimal:
@@ -53,7 +76,8 @@ def parse_decimal(value: str, *, compact: bool = False) -> Decimal:
 class DeterministicQuoteExtractor:
     method = "deterministic_v1"
 
-    def __init__(self) -> None:
+    def __init__(self, ticker_resolver: TickerResolver | None = None) -> None:
+        self._ticker_resolver = ticker_resolver or TickerResolver()
         ticker = r"(?P<ticker>[A-Za-z]{3,}[A-Za-z0-9]*\d{2})"
         price = r"(?P<price>\d+(?:[\.,]\d+)?)"
         size = r"(?P<size>\d+(?:[\.,]\d+)?)"
@@ -119,7 +143,7 @@ class DeterministicQuoteExtractor:
         quantity = parse_decimal(size) if size else rule.default_quantity
         candidate = QuoteCandidate(
             raw_ticker=raw_ticker,
-            instrument_id=normalize_instrument(raw_ticker),
+            instrument_id=self._ticker_resolver.resolve(raw_ticker),
             side=rule.side,
             quote_value=parse_decimal(match.group("price"), compact=rule.compact_price),
             quote_value_type=QuoteValueType.PRICE,

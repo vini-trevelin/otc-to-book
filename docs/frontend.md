@@ -89,6 +89,15 @@ Required UI states:
 - empty book.
 - rejected/noise messages.
 
+## Future Extraction Controls
+
+Future fuzzy or LLM extraction controls are frontend control-plane features only.
+The dashboard may show current extraction mode, provider health, latency,
+confidence, and backend-advertised provider profiles. It must not perform quote
+extraction in the browser, hold provider API keys, or submit arbitrary model
+server URLs. Any future API key workflow needs a separate backend-owned secret
+design before UI implementation.
+
 ## E2E Expectations
 
 Meaningful frontend flow requires E2E tests:

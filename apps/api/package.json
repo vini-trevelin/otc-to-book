@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "PYTHONPATH=src uv run uvicorn otc_to_book.api.main:app --reload --host 0.0.0.0 --port 8000",
+    "eval:extraction": "uv run python scripts/evaluate_extraction.py",
     "lint": "uv run ruff check .",
     "test": "uv run pytest",
     "typecheck": "uv run python -m compileall src tests"
