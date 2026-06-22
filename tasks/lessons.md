@@ -18,3 +18,5 @@ Record user corrections and architectural lessons here after review.
 - Review correction: V1 samples need expected outputs so parser evaluation can grow naturally later.
 - Review correction: commit messages follow `verb: description`.
 - Completed implementation plans should be removed once their durable decisions are represented in `docs/` and `tasks/`.
+- Fuzzy ticker matching must be gated by hard-negative false-merge metrics; wrong merges corrupt the book more severely than missed corrections.
+- Simulator examples should include controlled chaos so extractor quality can evolve against realistic broker-chat messiness.

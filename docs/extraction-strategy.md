@@ -115,6 +115,11 @@ deterministic and fuzzy stages fail or produce low confidence, and must use
 structured output, a bounded timeout, and the same `QuoteValidator` gate before
 book updates.
 
+Before fuzzy matching is enabled, the evaluation set must include chaotic
+positive examples and hard-negative false-merge examples. Initial bounded fuzzy
+rules should require an exact numeric suffix match, a very small alphabetic-root
+edit distance, explicit exclusions such as `PETR27`, and zero ambiguous matches.
+
 Future provider configuration is backend-owned. The frontend may select from
 backend-advertised provider profiles, but it must not hold API keys or submit
 arbitrary provider URLs. Provider config should use backend references such as

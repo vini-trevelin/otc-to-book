@@ -17,11 +17,12 @@
 - Extraction evaluation command with ticker, side, quote value, quantity, rejection reason, and exact-row metrics.
 - No fuzzy matching or LLM runtime behavior.
 
-## V1.2: Bounded Fuzzy Design
+## V1.2: Chaotic Evaluation And Bounded Fuzzy
 
-Plan fast local fuzzy candidate extraction behind the evaluation harness.
-Fuzzy matching must be bounded by a known canonical universe or alias set and
-must prioritize false-positive control.
+- Add chaotic extraction fixtures and simulator chaos controls.
+- Track hard-negative false-merge metrics before enabling fuzzy matching.
+- Implement fast local fuzzy candidate extraction behind the evaluation harness.
+- Fuzzy matching must be bounded by the session valid ticker pool, explicit exclusions, and ambiguity checks.
 
 ## V1.3: Backend-Owned Provider Config
 

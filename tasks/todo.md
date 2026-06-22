@@ -4,9 +4,9 @@ Status values: TODO | IN PROGRESS | DONE | BLOCKED.
 
 ## Current Status
 
-V1 implementation and the current UI polish branch are complete and verified.
+V1 implementation, UI polish, and extractor evaluation are complete and merged to `main`.
 
-Branch status: `codex/ui-fixes-polish` contains the current UI polish work. Merge, PR, or release state is tracked by GitHub rather than this task file.
+Active planning branch: `feat/fuzzy_extraction_implementation`.
 
 Completed work:
 
@@ -15,10 +15,12 @@ Completed work:
 - Realtime workstation UI, WebSocket state, unit tests, and E2E flows.
 - Full verification and current docs.
 - UI polish branch: collapsible sidebars, book-first layout, compact book rows, 24-hour times, static muted placeholders, fixed-height chat feed, and shadcn-style title tooltips/skeletons.
+- Extractor evaluation branch: session-scoped valid ticker pool, explicit ticker aliases, extraction metrics, fixture rows, and backend-owned future provider docs.
 
-## Next Planning Gate
+## Active Plans
 
-Create new task plans only when the architect opens the next implementation iteration. New plans should be checkable, scoped, and linked from this file while active.
+- `plans/005-chaotic-extraction-evaluation-and-simulator.md` - add chaotic fixtures, false-merge metrics, and simulator chaos controls before fuzzy matching.
+- `plans/006-bounded-fuzzy-ticker-resolver.md` - implement conservative session-pool fuzzy ticker resolution after plan 005.
 
 ## Working Agreements
 
