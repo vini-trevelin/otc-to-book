@@ -96,6 +96,15 @@ class QuotePipeline:
     def snapshot(self) -> BookState:
         return self.book_builder.snapshot()
 
+    def clear_books(self, *, correlation_id: str | None = None) -> EventEnvelope:
+        correlation = correlation_id or str(uuid4())
+        book_state = self.book_builder.clear()
+        return self._envelope(
+            "book_updated",
+            correlation,
+            json_payload(book_state),
+        )
+
     def _envelope(
         self,
         event_type: str,

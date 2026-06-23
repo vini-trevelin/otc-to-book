@@ -5,7 +5,7 @@ export type EventType =
   | "quote_event"
   | "book_updated";
 
-export type ClientEventType = "user_message" | "simulator_start" | "simulator_stop";
+export type ClientEventType = "user_message" | "simulator_start" | "simulator_stop" | "book_clear";
 
 export type EventEnvelope<TPayload = unknown> = {
   event_id: string;

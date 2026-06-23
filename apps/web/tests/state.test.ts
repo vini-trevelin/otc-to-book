@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import type { EventEnvelope } from "@/lib/events";
+import type { BookStatePayload, EventEnvelope } from "@/lib/events";
 import { initialState, workstationReducer } from "@/lib/state";
 
 function envelope(sequence: number, event_id = `event-${sequence}`): EventEnvelope {
@@ -58,5 +58,38 @@ describe("workstationReducer", () => {
 
     expect(second.lastSequence).toBe(2);
     expect(second.messages).toHaveLength(1);
+  });
+
+  it("clears book state without clearing provenance feeds", () => {
+    const state = workstationReducer(initialState, {
+      type: "server_event",
+      event: envelope(1)
+    });
+    const withBook = workstationReducer(state, {
+      type: "server_event",
+      event: {
+        ...envelope(2),
+        event_id: "book-1",
+        event_type: "book_updated",
+        payload: {
+          books: {
+            PETRO27: {
+              instrument_id: "PETRO27",
+              best_bid: null,
+              best_ask: null,
+              rows: [],
+              updated_timestamp: "2026-06-19T12:00:00Z"
+            }
+          },
+          updated_timestamp: "2026-06-19T12:00:00Z"
+        } satisfies BookStatePayload
+      }
+    });
+
+    const cleared = workstationReducer(withBook, { type: "clear_books" });
+
+    expect(cleared.book?.books).toEqual({});
+    expect(cleared.messages).toHaveLength(1);
+    expect(cleared.events).toHaveLength(2);
   });
 });

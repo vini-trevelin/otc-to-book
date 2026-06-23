@@ -33,6 +33,24 @@ def test_websocket_user_message_flow() -> None:
     assert events[-1]["payload"]["books"]["PETRO27"]["best_ask"] is not None
 
 
+def test_websocket_clear_books_flow() -> None:
+    with TestClient(app) as client:
+        with client.websocket_connect("/ws") as websocket:
+            websocket.send_json(
+                {
+                    "event_type": "user_message",
+                    "payload": {"broker_id": "BROKER_A", "text": "vendo petro27 7.30 5mm"},
+                }
+            )
+            events = [websocket.receive_json() for _ in range(4)]
+            websocket.send_json({"event_type": "book_clear", "payload": {}})
+            clear_event = websocket.receive_json()
+
+    assert events[-1]["payload"]["books"]["PETRO27"]["best_ask"] is not None
+    assert clear_event["event_type"] == "book_updated"
+    assert clear_event["payload"]["books"] == {}
+
+
 def test_websocket_simulator_start_accepts_chaos_payload() -> None:
     with TestClient(app) as client:
         with client.websocket_connect("/ws") as websocket:

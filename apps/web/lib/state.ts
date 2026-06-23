@@ -23,6 +23,7 @@ export type WorkstationState = {
 export type WorkstationAction =
   | { type: "connection"; connection: ConnectionState }
   | { type: "simulator"; running: boolean }
+  | { type: "clear_books" }
   | { type: "server_event"; event: EventEnvelope };
 
 export const initialState: WorkstationState = {
@@ -47,6 +48,13 @@ export function workstationReducer(
 
   if (action.type === "simulator") {
     return { ...state, simulatorRunning: action.running };
+  }
+
+  if (action.type === "clear_books") {
+    return {
+      ...state,
+      book: { books: {}, updated_timestamp: new Date().toISOString() }
+    };
   }
 
   const event = action.event;

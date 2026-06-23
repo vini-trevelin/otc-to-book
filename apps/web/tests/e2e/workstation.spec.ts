@@ -33,6 +33,10 @@ test("side panels expose the book-first shell controls", async ({ page }) => {
   await expect(page.getByRole("heading", { name: "Chat", exact: true })).toBeVisible();
   await page.getByRole("heading", { name: "Simulate" }).hover();
   await expect(page.getByText("Generate broker flow with controlled noise.")).toBeVisible();
+  await page.getByText("Random").hover();
+  await expect(page.getByText("Controls how varied the simulator is")).toBeVisible();
+  await page.getByText("Ticker typo").hover();
+  await expect(page.getByText("Probability of ticker typo variants")).toBeVisible();
 
   await page.getByRole("button", { name: "Collapse broker chat" }).click();
   await expect(page.getByRole("heading", { name: "Broker Input" })).toBeHidden();
@@ -40,6 +44,21 @@ test("side panels expose the book-first shell controls", async ({ page }) => {
 
   await page.getByRole("button", { name: "Expand broker chat" }).click();
   await expect(page.getByRole("heading", { name: "Broker Input" })).toBeVisible();
+});
+
+test("clear all books empties book state while preserving chat", async ({ page }) => {
+  await page.goto("/");
+
+  await expect(page.getByText("connected")).toBeVisible();
+  await page.getByLabel("Message").fill("vendo petro27 7.30 5mm");
+  await page.getByRole("button", { name: "Send" }).click();
+  await expect(page.getByTestId("book-card-PETRO27")).toBeVisible();
+
+  await page.getByRole("button", { name: "Clear all books" }).click();
+
+  await expect(page.getByTestId("book-card-PETRO27")).toHaveCount(0);
+  await expect(page.getByText("Book empty")).toBeVisible();
+  await expect(page.getByText("vendo petro27 7.30 5mm").first()).toBeVisible();
 });
 
 test("replacement quote mutes superseded row", async ({ page }) => {

@@ -71,3 +71,13 @@ def test_new_valid_ticker_creates_separate_book(raw_message) -> None:
     assert sorted(state.books) == ["PETRO27", "VALE29"]
     assert state.books["VALE29"].best_bid is not None
     assert state.books["VALE29"].best_bid.quote_event.raw_ticker == "vale29"
+
+
+def test_clear_removes_all_books(raw_message) -> None:
+    builder = BookBuilder()
+    builder.apply_quote(quote(raw_message, "bid petro27 7.25", message_id="petro"))
+    builder.apply_quote(quote(raw_message, "bid vale29 7.27", message_id="vale"))
+
+    state = builder.clear()
+
+    assert state.books == {}

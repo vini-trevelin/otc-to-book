@@ -99,6 +99,8 @@ async def websocket_endpoint(websocket: WebSocket) -> None:
                 if simulator_task is not None:
                     simulator_task.cancel()
                     simulator_task = None
+            elif event_type == "book_clear":
+                await send_events([pipeline.clear_books(correlation_id=str(uuid4()))])
     except WebSocketDisconnect:
         if simulator_task is not None:
             simulator_task.cancel()

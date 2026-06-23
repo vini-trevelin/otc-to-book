@@ -6,7 +6,7 @@ Status values: TODO | IN PROGRESS | DONE | BLOCKED.
 
 V1 implementation, UI polish, and extractor evaluation are complete and merged to `main`.
 
-Active implementation branch: `feat/fuzzy_extraction_implementation`.
+Active implementation branch: `main`.
 
 Completed work:
 
@@ -22,6 +22,29 @@ Completed work:
 
 - `plans/005-chaotic-extraction-evaluation-and-simulator.md` - DONE.
 - `plans/006-bounded-fuzzy-ticker-resolver.md` - DONE.
+- Current UI iteration - DONE:
+  - Add simulator control tooltips for Random, Noise, Step, Chaos, Ticker typo, and Template noise.
+  - Redesign simulator numeric steppers with vertically stacked increment/decrement controls.
+  - Make the left chat feed consume remaining sidebar height without causing page overflow.
+  - Add a left-sidebar Clear all books control that clears backend book rows while preserving chat/event provenance.
+
+## Current UI Iteration Plan
+
+Acceptance:
+
+- Hovering or focusing each simulator variable label exposes a concise tooltip explaining the backend simulator parameter.
+- Numeric simulator controls keep the current compact sidebar density while stacking plus/minus controls vertically beside each input.
+- The left chat feed fills available sidebar height and scrolls internally with no page-level overflow on the workstation viewport.
+- Clear all books appears under the left sidebar content and clears backend book rows without clearing chat messages or parsed events.
+- API, reducer, and E2E tests cover the clear-books flow.
+
+Results:
+
+- Implemented simulator control tooltips with existing Base UI/shadcn-style tooltip primitives.
+- Implemented compact vertical plus/minus controls beside simulator numeric inputs.
+- Updated the left sidebar to use viewport-bounded layout with an internally scrolling chat feed.
+- Added backend-owned `book_clear` handling and a left-sidebar Clear all books control.
+- Verified with frontend typecheck/unit tests, targeted API tests, E2E tests, and live browser smoke checks.
 
 ## Review Results
 

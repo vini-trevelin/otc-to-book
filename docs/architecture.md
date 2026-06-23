@@ -76,6 +76,7 @@ Client-to-server events:
 - `user_message`: user submits a chat message.
 - `simulator_start`: start auto message generation.
 - `simulator_stop`: stop auto generation.
+- `book_clear`: clear all current book rows for the running backend session.
 
 Server-to-client events:
 
@@ -84,6 +85,12 @@ Server-to-client events:
 - `quote_rejected`: candidate failed validation or message was noise.
 - `quote_event`: valid immutable event created.
 - `book_updated`: book state changed.
+
+Clear rules:
+
+- `book_clear` emits a `book_updated` event with an empty `books` payload.
+- Clearing books does not erase raw message history, parsed event history, simulator state, or the session-scoped ticker resolver.
+- The control is a workstation reset affordance for display/book rows only, not a full session reset.
 
 HTTP endpoints:
 

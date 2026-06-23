@@ -43,7 +43,11 @@ Current chat behavior:
 - Connect is a muted placeholder for future broker chat integrations.
 - Simulate uses a single start/stop button.
 - Simulate exposes backend-owned chaos controls for evaluation data generation; the browser only sends rates and does not classify tickers.
-- Chat feed has a fixed-height scroll area; raw messages must not grow the sidebar indefinitely.
+- Simulator variable controls show title-hover tooltips explaining Random, Noise, Step, Chaos, Ticker typo, Template noise, and Step interval behavior.
+- Simulator numeric variable controls use compact vertically stacked increment/decrement buttons beside the input so dense controls stay aligned in the left sidebar.
+- Chat feed consumes the remaining left sidebar height and scrolls internally; raw messages must not grow the page or sidebar beyond the viewport.
+- Chat messages use compact bordered tape rows with broker, 24-hour timestamp, and raw text.
+- The left sidebar includes a Clear all books action under the chat feed. It clears backend book rows while preserving raw chat and parsed event provenance.
 - Empty/future-state placeholders use static shadcn-style skeletons with muted contrast.
 
 ## Book Panel
@@ -92,6 +96,7 @@ Required UI states:
 - upload success/failure.
 - empty book.
 - rejected/noise messages.
+- clear all books requested/empty book state.
 
 ## Future Extraction Controls
 

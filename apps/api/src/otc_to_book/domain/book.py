@@ -44,6 +44,10 @@ class BookBuilder:
 
         return self.snapshot()
 
+    def clear(self) -> BookState:
+        self._rows_by_instrument.clear()
+        return self.snapshot()
+
     def snapshot(self) -> BookState:
         now = utc_now()
         books = {

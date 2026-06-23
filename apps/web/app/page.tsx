@@ -8,6 +8,7 @@ import {
   Minus,
   Play,
   Plus,
+  RotateCcw,
   Send,
   Square
 } from "lucide-react";
@@ -38,6 +39,20 @@ import { cn } from "@/lib/utils";
 
 const WS_URL = process.env.NEXT_PUBLIC_API_WS_URL ?? "ws://127.0.0.1:8000/ws";
 const HTTP_URL = process.env.NEXT_PUBLIC_API_HTTP_URL ?? "http://127.0.0.1:8000";
+const SIMULATOR_HELP = {
+  randomness:
+    "Controls how varied the simulator is across brokers, tickers, sides, prices, and sizes. 1 is narrow; 5 is broad.",
+  noise:
+    "Probability that a simulator tick emits non-quote chat, such as greetings or flow checks.",
+  step:
+    "Delay between simulator messages. Lower values produce a faster tape.",
+  chaos:
+    "Probability of harder real-world message shapes used for parser evaluation.",
+  tickerTypo:
+    "Probability of ticker typo variants. These test alias and bounded fuzzy ticker resolution.",
+  templateNoise:
+    "Probability of extra words, spacing, or broker-style template noise around otherwise valid quotes."
+} as const;
 
 export default function WorkstationPage() {
   const [state, dispatch] = useReducer(workstationReducer, initialState);
@@ -120,6 +135,11 @@ export default function WorkstationPage() {
     }
   }
 
+  function clearAllBooks() {
+    dispatch({ type: "clear_books" });
+    sendClientEvent({ event_type: "book_clear", payload: {} });
+  }
+
   async function uploadSample(file: File | null) {
     if (!file) return;
     setUploadStatus("");
@@ -145,16 +165,16 @@ export default function WorkstationPage() {
     <TooltipProvider>
       <main
         className={cn(
-          "relative grid min-h-screen grid-cols-1 gap-3 overflow-x-hidden bg-background p-3 text-foreground transition-[grid-template-columns] duration-200 ease-out lg:grid-cols-[minmax(300px,340px)_minmax(0,1fr)]",
+          "relative grid h-screen min-h-0 grid-cols-1 gap-3 overflow-hidden bg-background p-3 text-foreground transition-[grid-template-columns] duration-200 ease-out lg:grid-cols-[minmax(300px,340px)_minmax(0,1fr)]",
           !leftOpen && "lg:grid-cols-[44px_minmax(0,1fr)]",
           rightOpen &&
             "lg:grid-cols-[minmax(300px,340px)_minmax(0,1fr)_minmax(320px,380px)]",
           !leftOpen && rightOpen && "lg:grid-cols-[44px_minmax(0,1fr)_minmax(320px,380px)]"
         )}
       >
-      <aside className="min-w-0">
+      <aside className="min-h-0 min-w-0">
         {leftOpen ? (
-          <Card className="h-full gap-0 rounded-md bg-[var(--panel)] py-0">
+          <Card className="h-full min-h-0 gap-0 rounded-md bg-[var(--panel)] py-0">
             <PanelHeader
               action={
                 <Button
@@ -174,7 +194,7 @@ export default function WorkstationPage() {
               title="Broker Input"
             />
 
-            <CardContent className="flex min-h-0 flex-1 flex-col space-y-1.5 p-3">
+            <CardContent className="flex min-h-0 flex-1 flex-col space-y-1.5 overflow-hidden p-3">
               <SidebarSection
                 description="Reserve space for real broker chat integrations."
                 onToggle={() => setConnectOpen((value) => !value)}
@@ -191,8 +211,7 @@ export default function WorkstationPage() {
                 title="Simulate"
               >
                 <div className="space-y-2.5">
-                  <Label className="block text-xs">
-                    Random
+                  <FieldTooltip label="Random" description={SIMULATOR_HELP.randomness}>
                     <Slider
                       className="mt-2"
                       min={1}
@@ -202,9 +221,10 @@ export default function WorkstationPage() {
                         setRandomness(Array.isArray(value) ? (value[0] ?? 3) : value)
                       }
                     />
-                  </Label>
+                  </FieldTooltip>
                   <div className="grid grid-cols-2 gap-2">
                     <NumberStepper
+                      help={SIMULATOR_HELP.noise}
                       label="Noise"
                       max={1}
                       min={0}
@@ -213,6 +233,7 @@ export default function WorkstationPage() {
                       value={noiseRate}
                     />
                     <NumberStepper
+                      help={SIMULATOR_HELP.step}
                       label="Step"
                       min={250}
                       onChange={setIntervalMs}
@@ -223,6 +244,7 @@ export default function WorkstationPage() {
                   </div>
                   <div className="grid grid-cols-3 gap-2">
                     <NumberStepper
+                      help={SIMULATOR_HELP.chaos}
                       label="Chaos"
                       max={1}
                       min={0}
@@ -231,6 +253,7 @@ export default function WorkstationPage() {
                       value={chaosRate}
                     />
                     <NumberStepper
+                      help={SIMULATOR_HELP.tickerTypo}
                       label="Ticker typo"
                       max={1}
                       min={0}
@@ -239,6 +262,7 @@ export default function WorkstationPage() {
                       value={tickerTypoRate}
                     />
                     <NumberStepper
+                      help={SIMULATOR_HELP.templateNoise}
                       label="Template noise"
                       max={1}
                       min={0}
@@ -313,12 +337,12 @@ export default function WorkstationPage() {
                 </form>
               </SidebarSection>
 
-              <div className="flex flex-none flex-col">
+              <div className="flex min-h-0 flex-1 flex-col border-b border-[var(--border)] pb-1.5">
                 <SectionHeading
                   description="Latest accepted raw messages."
                   title="Chat"
                 />
-                <div className="mt-2 h-44 overflow-auto">
+                <div className="mt-2 min-h-0 flex-1 overflow-auto pr-1">
                   {state.messages.length === 0 ? (
                     <EmptyWithSkeleton
                       className="h-full"
@@ -333,16 +357,38 @@ export default function WorkstationPage() {
                     </EmptyWithSkeleton>
                   ) : (
                     state.messages.map((item) => (
-                      <Card className="mb-2 gap-1 rounded-md py-2 text-sm" key={item.message_id}>
-                        <div className="mb-1 flex justify-between gap-2 text-xs text-[var(--muted-foreground)]">
-                          <span>{item.broker_id}</span>
+                      <div
+                        className="mb-1.5 rounded-md border border-[var(--border)] bg-[color-mix(in_oklch,var(--panel-strong),transparent_18%)] px-2 py-1.5"
+                        key={item.message_id}
+                      >
+                        <div className="mb-1 grid grid-cols-[minmax(0,1fr)_auto] gap-2 font-mono text-[10px] uppercase tracking-wide text-[var(--muted-foreground)]">
+                          <span className="truncate">{item.broker_id}</span>
                           <span>{formatUtcTime(item.received_timestamp)}</span>
                         </div>
-                        <div>{item.text}</div>
-                      </Card>
+                        <div className="break-words text-xs leading-snug text-foreground">
+                          {item.text}
+                        </div>
+                      </div>
                     ))
                   )}
                 </div>
+              </div>
+
+              <div className="flex flex-none items-center justify-between gap-2 pt-1">
+                <div className="min-w-0 text-[11px] leading-snug text-[var(--muted-foreground)]">
+                  Clear all book rows. Chat and event history stay visible.
+                </div>
+                <Button
+                  aria-label="Clear all books"
+                  className="gap-1.5"
+                  disabled={!isConnected || books.length === 0}
+                  onClick={clearAllBooks}
+                  type="button"
+                  variant="outline"
+                >
+                  <RotateCcw size={13} />
+                  Clear all books
+                </Button>
               </div>
             </CardContent>
           </Card>
@@ -356,7 +402,7 @@ export default function WorkstationPage() {
         )}
       </aside>
 
-      <section className="min-w-0">
+      <section className="min-h-0 min-w-0 overflow-auto">
         <div className="grid gap-3 [grid-template-columns:repeat(auto-fit,minmax(360px,1fr))] max-[430px]:[grid-template-columns:1fr]">
           {books.length === 0 ? <BookEmptyState /> : null}
           {books.map((book) => (
@@ -390,7 +436,7 @@ export default function WorkstationPage() {
       </section>
 
       {rightOpen ? (
-        <aside className="min-w-0">
+        <aside className="min-h-0 min-w-0">
           <Card className="h-full gap-0 rounded-md bg-[var(--panel)] py-0">
             <PanelHeader
               action={
@@ -573,6 +619,33 @@ function SectionHeading({
   );
 }
 
+function FieldTooltip({
+  label,
+  description,
+  htmlFor,
+  children
+}: {
+  label: string;
+  description: string;
+  htmlFor?: string;
+  children?: ReactNode;
+}) {
+  return (
+    <div>
+      <Tooltip>
+        <TooltipTrigger
+          render={<Label htmlFor={htmlFor} tabIndex={0} />}
+          className="cursor-help text-xs decoration-dotted underline-offset-4 hover:underline focus-visible:underline"
+        >
+          {label}
+        </TooltipTrigger>
+        <TooltipContent side="right">{description}</TooltipContent>
+      </Tooltip>
+      {children}
+    </div>
+  );
+}
+
 function ConnectPlaceholder() {
   return (
     <div className="rounded-md border border-dashed border-[color-mix(in_oklch,var(--border),transparent_35%)] px-2.5 py-2">
@@ -725,6 +798,7 @@ function BookQuoteRow({ row, ask = false }: { row: BookRow; ask?: boolean }) {
 
 function NumberStepper({
   label,
+  help,
   value,
   min,
   max,
@@ -733,6 +807,7 @@ function NumberStepper({
   onChange
 }: {
   label: string;
+  help: string;
   value: number;
   min: number;
   max?: number;
@@ -754,23 +829,11 @@ function NumberStepper({
 
   return (
     <div>
-      <Label className="block" htmlFor={id}>
-        {suffix ? `${label} (${suffix})` : label}
-      </Label>
-      <div className="mt-1 grid grid-cols-[22px_minmax(38px,1fr)_22px] gap-1">
-        <Button
-          aria-label={`Decrease ${label}`}
-          className="h-7 px-0"
-          onClick={() => update(value - step)}
-          size="sm"
-          type="button"
-          variant="outline"
-        >
-          <Minus size={12} />
-        </Button>
+      <FieldTooltip label={suffix ? `${label} (${suffix})` : label} description={help} htmlFor={id} />
+      <div className="mt-1 grid grid-cols-[minmax(44px,1fr)_20px] gap-1">
         <Input
           aria-label={suffix ? `${label} (${suffix})` : label}
-          className="h-7 bg-black px-1 text-center font-mono text-[11px]"
+          className="h-8 bg-black px-1.5 text-center font-mono text-[11px]"
           id={id}
           inputMode={decimals > 0 ? "decimal" : "numeric"}
           onBlur={() => update(value)}
@@ -780,16 +843,28 @@ function NumberStepper({
           }}
           value={value}
         />
-        <Button
-          aria-label={`Increase ${label}`}
-          className="h-7 px-0"
-          onClick={() => update(value + step)}
-          size="sm"
-          type="button"
-          variant="outline"
-        >
-          <Plus size={12} />
-        </Button>
+        <div className="grid h-8 grid-rows-2 overflow-hidden rounded-md border border-[var(--border)]">
+          <Button
+            aria-label={`Increase ${label}`}
+            className="h-4 rounded-none border-0 px-0"
+            onClick={() => update(value + step)}
+            size="sm"
+            type="button"
+            variant="ghost"
+          >
+            <Plus size={10} />
+          </Button>
+          <Button
+            aria-label={`Decrease ${label}`}
+            className="h-4 rounded-none border-0 border-t border-[var(--border)] px-0"
+            onClick={() => update(value - step)}
+            size="sm"
+            type="button"
+            variant="ghost"
+          >
+            <Minus size={10} />
+          </Button>
+        </div>
       </div>
     </div>
   );

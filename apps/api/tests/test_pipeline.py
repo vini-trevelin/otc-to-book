@@ -92,3 +92,14 @@ def test_pipeline_hard_negative_ticker_stays_separate(raw_message) -> None:
     book_updated = next(event for event in events if event.event_type == "book_updated")
 
     assert sorted(book_updated.payload["books"]) == ["BOVA26", "BOVE26"]
+
+
+def test_pipeline_clear_books_emits_empty_book_state(raw_message) -> None:
+    pipeline = QuotePipeline(session_id="session-1")
+    pipeline.process_message(raw_message("bid petro27 7.25"))
+
+    event = pipeline.clear_books(correlation_id="clear-1")
+
+    assert event.event_type == "book_updated"
+    assert event.correlation_id == "clear-1"
+    assert event.payload["books"] == {}
