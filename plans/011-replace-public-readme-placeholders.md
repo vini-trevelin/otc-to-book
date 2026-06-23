@@ -6,6 +6,7 @@
 
 ## Status
 
+- **Status**: DONE
 - **Priority**: P2
 - **Effort**: S
 - **Risk**: LOW, docs only.
@@ -15,7 +16,7 @@
 
 ## Why this matters
 
-The repository is explicitly a quant developer portfolio app, but `README.md` still contains four `TODO` placeholders. That is the first file a reviewer sees. The detailed project docs are good; the README should route readers to them and provide a clean quickstart, status, and demo placeholder without becoming a long architecture document.
+The repository is explicitly a quant developer portfolio app, but `README.md` still contains four `TODO` placeholders. That is the first file a reviewer sees. The detailed project docs are good; the README should route readers to them and provide a clean quickstart, status, and demo placeholder without becoming a long architecture document. Keep the README command-focused; do not add a demo narrative.
 
 ## Current state
 
@@ -78,7 +79,7 @@ Replace placeholders with:
   - `pnpm test`
   - `pnpm --filter web test:e2e`
   - `cd apps/api && uv run python scripts/evaluate_extraction.py`
-- Demo media: a short placeholder such as "Demo GIF/video to be added" if no media exists.
+- Demo media: keep a short placeholder if no media exists, but do not use `TODO` wording.
 - Docs links:
   - `docs/project-brief.md`
   - `docs/architecture.md`
@@ -88,6 +89,7 @@ Replace placeholders with:
   - `docs/roadmap.md`
 
 Keep it factual and sparse.
+Do not include step-by-step demo narrative actions; the README should stay focused on commands and documentation links.
 
 **Verify**: `rg -n "TODO" README.md` returns no placeholder TODOs.
 
@@ -106,6 +108,8 @@ Docs-only. No app tests required unless command names change.
 - [ ] README has no placeholder `TODO` sections.
 - [ ] README includes a working local quickstart.
 - [ ] README links to detailed docs instead of duplicating them.
+- [ ] README keeps a non-`TODO` demo media placeholder if no real media exists.
+- [ ] README does not include a demo narrative.
 - [ ] `pnpm check:versions` exits 0.
 
 ## STOP conditions

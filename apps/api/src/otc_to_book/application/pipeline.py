@@ -9,10 +9,12 @@ from otc_to_book.domain.book import BookBuilder
 from otc_to_book.domain.extraction import DeterministicQuoteExtractor, QuoteExtractor
 from otc_to_book.domain.models import (
     BookState,
+    ClientError,
     EventEnvelope,
     QuoteRejected,
     RawMessage,
     RejectionReason,
+    ServerEventType,
     utc_now,
 )
 from otc_to_book.domain.validation import QuoteValidator
@@ -46,7 +48,7 @@ class QuotePipeline:
         correlation = correlation_id or str(uuid4())
         events = [
             self._envelope(
-                "message_received",
+                ServerEventType.MESSAGE_RECEIVED,
                 correlation,
                 json_payload(raw_message),
             )
@@ -56,7 +58,7 @@ class QuotePipeline:
         if extraction.candidate is not None:
             events.append(
                 self._envelope(
-                    "quote_parsed",
+                    ServerEventType.QUOTE_PARSED,
                     correlation,
                     json_payload(extraction.candidate),
                 )
@@ -69,7 +71,7 @@ class QuotePipeline:
         if isinstance(validated, QuoteRejected):
             events.append(
                 self._envelope(
-                    "quote_rejected",
+                    ServerEventType.QUOTE_REJECTED,
                     correlation,
                     json_payload(validated),
                 )
@@ -78,7 +80,7 @@ class QuotePipeline:
 
         events.append(
             self._envelope(
-                "quote_event",
+                ServerEventType.QUOTE_EVENT,
                 correlation,
                 json_payload(validated),
             )
@@ -86,12 +88,48 @@ class QuotePipeline:
         book_state = self.book_builder.apply_quote(validated)
         events.append(
             self._envelope(
-                "book_updated",
+                ServerEventType.BOOK_UPDATED,
                 correlation,
                 json_payload(book_state),
             )
         )
         return events
+
+    def reject_message(
+        self,
+        raw_message: RawMessage,
+        reasons: tuple[RejectionReason, ...],
+        *,
+        correlation_id: str | None = None,
+    ) -> list[EventEnvelope]:
+        correlation = correlation_id or str(uuid4())
+        rejected = self.validator.reject_raw_message(raw_message, reasons)
+        return [
+            self._envelope(
+                ServerEventType.MESSAGE_RECEIVED,
+                correlation,
+                json_payload(raw_message),
+            ),
+            self._envelope(
+                ServerEventType.QUOTE_REJECTED,
+                correlation,
+                json_payload(rejected),
+            ),
+        ]
+
+    def client_error(
+        self,
+        *,
+        code: str,
+        message: str,
+        correlation_id: str | None = None,
+    ) -> EventEnvelope:
+        correlation = correlation_id or str(uuid4())
+        return self._envelope(
+            ServerEventType.CLIENT_ERROR,
+            correlation,
+            json_payload(ClientError(code=code, message=message)),
+        )
 
     def snapshot(self) -> BookState:
         return self.book_builder.snapshot()
@@ -100,14 +138,14 @@ class QuotePipeline:
         correlation = correlation_id or str(uuid4())
         book_state = self.book_builder.clear()
         return self._envelope(
-            "book_updated",
+            ServerEventType.BOOK_UPDATED,
             correlation,
             json_payload(book_state),
         )
 
     def _envelope(
         self,
-        event_type: str,
+        event_type: ServerEventType,
         correlation_id: str,
         payload: dict[str, Any],
     ) -> EventEnvelope:

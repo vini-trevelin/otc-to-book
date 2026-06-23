@@ -4,17 +4,47 @@ import asyncio
 import csv
 import json
 from io import StringIO
-from typing import Any
+from typing import Any, Literal
 from uuid import uuid4
 
 from fastapi import FastAPI, File, UploadFile, WebSocket, WebSocketDisconnect
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel, Field, ValidationError
 
 from otc_to_book.application.pipeline import QuotePipeline
-from otc_to_book.domain.models import RawMessage, utc_now
+from otc_to_book.domain.models import RawMessage, RejectionReason, utc_now
 from otc_to_book.simulator.generator import ChatMessageGenerator, SimulatorConfig
 
 app = FastAPI(title="OTC-to-Book API", version="0.1.0")
 SAMPLE_FILE = File(...)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://127.0.0.1:3000", "http://localhost:3000"],
+    allow_methods=["GET", "POST"],
+    allow_headers=["*"],
+)
+
+
+class ClientEventEnvelope(BaseModel):
+    event_type: Literal["user_message", "simulator_start", "simulator_stop", "book_clear"]
+    payload: dict[str, Any] = Field(default_factory=dict)
+
+
+class UserMessagePayload(BaseModel):
+    broker_id: str = "USER"
+    text: str = Field(min_length=1)
+
+
+class SimulatorStartPayload(BaseModel):
+    randomness: int = Field(default=3, ge=1, le=5)
+    noise_rate: float = Field(default=0.2, ge=0, le=1)
+    chaos_rate: float = Field(default=0, ge=0, le=1)
+    ticker_typo_rate: float = Field(default=0, ge=0, le=1)
+    template_noise_rate: float = Field(default=0, ge=0, le=1)
+    interval_ms: int = Field(default=1000, ge=50)
+    broker_ids: tuple[str, ...] = ("BROKER_A", "BROKER_B", "BROKER_C")
+    seed: int | None = None
 
 
 @app.get("/health")
@@ -29,22 +59,22 @@ async def replay_samples(file: UploadFile = SAMPLE_FILE) -> dict[str, Any]:
     content = (await file.read()).decode("utf-8")
     rows = _parse_sample_rows(file.filename or "", content)
     all_events = []
+    rejected_rows = 0
 
     for index, row in enumerate(rows, start=1):
-        raw_message = RawMessage(
-            message_id=row.get("message_id") or f"{replay_id}-{index}",
-            broker_id=row.get("broker_id") or "USER",
-            received_timestamp=row.get("received_timestamp") or utc_now(),
-            text=row["text"],
-            replay_id=replay_id,
-            replay_sequence=index,
-        )
-        all_events.extend(
-            event.model_dump(mode="json")
-            for event in pipeline.process_message(raw_message, correlation_id=str(uuid4()))
-        )
+        raw_message, row_reasons = _raw_message_from_replay_row(row, replay_id, index)
+        if row_reasons:
+            rejected_rows += 1
+            events = pipeline.reject_message(
+                raw_message,
+                row_reasons,
+                correlation_id=str(uuid4()),
+            )
+        else:
+            events = pipeline.process_message(raw_message, correlation_id=str(uuid4()))
+        all_events.extend(event.model_dump(mode="json") for event in events)
 
-    return {"replay_id": replay_id, "events": all_events}
+    return {"replay_id": replay_id, "events": all_events, "rejected_rows": rejected_rows}
 
 
 @app.websocket("/ws")
@@ -66,35 +96,83 @@ async def websocket_endpoint(websocket: WebSocket) -> None:
 
     try:
         while True:
-            message = await websocket.receive_json()
-            event_type = message.get("event_type")
-            payload = message.get("payload") or {}
+            try:
+                message = ClientEventEnvelope.model_validate(await websocket.receive_json())
+            except ValidationError as exc:
+                await send_events(
+                    [
+                        pipeline.client_error(
+                            code="invalid_client_event",
+                            message=_validation_message(exc),
+                        )
+                    ]
+                )
+                continue
+
+            event_type = message.event_type
+            payload = message.payload
 
             if event_type == "user_message":
+                try:
+                    user_message = UserMessagePayload.model_validate(payload)
+                except ValidationError as exc:
+                    await send_events(
+                        [
+                            pipeline.client_error(
+                                code="invalid_user_message",
+                                message=_validation_message(exc),
+                            )
+                        ]
+                    )
+                    continue
                 raw_message = RawMessage(
                     message_id=str(uuid4()),
-                    broker_id=payload.get("broker_id") or "USER",
+                    broker_id=user_message.broker_id,
                     received_timestamp=utc_now(),
-                    text=payload["text"],
+                    text=user_message.text.strip(),
                 )
+                if not raw_message.text:
+                    await send_events(
+                        [
+                            pipeline.client_error(
+                                code="invalid_user_message",
+                                message=(
+                                    "payload.text: String should have at least "
+                                    "1 non-whitespace character"
+                                ),
+                            )
+                        ]
+                    )
+                    continue
                 events = pipeline.process_message(raw_message, correlation_id=str(uuid4()))
                 await send_events(events)
             elif event_type == "simulator_start":
+                try:
+                    simulator_payload = SimulatorStartPayload.model_validate(payload)
+                    config = SimulatorConfig(
+                        randomness=simulator_payload.randomness,
+                        noise_rate=simulator_payload.noise_rate,
+                        chaos_rate=simulator_payload.chaos_rate,
+                        ticker_typo_rate=simulator_payload.ticker_typo_rate,
+                        template_noise_rate=simulator_payload.template_noise_rate,
+                        broker_ids=simulator_payload.broker_ids,
+                        seed=simulator_payload.seed,
+                    )
+                except (ValidationError, ValueError) as exc:
+                    await send_events(
+                        [
+                            pipeline.client_error(
+                                code="invalid_simulator_config",
+                                message=_error_message(exc),
+                            )
+                        ]
+                    )
+                    continue
                 if simulator_task is not None:
                     simulator_task.cancel()
-                config = SimulatorConfig(
-                    randomness=int(payload.get("randomness", 3)),
-                    noise_rate=float(payload.get("noise_rate", 0.2)),
-                    chaos_rate=float(payload.get("chaos_rate", 0)),
-                    ticker_typo_rate=float(payload.get("ticker_typo_rate", 0)),
-                    template_noise_rate=float(payload.get("template_noise_rate", 0)),
-                    broker_ids=tuple(
-                        payload.get("broker_ids") or ("BROKER_A", "BROKER_B", "BROKER_C")
-                    ),
-                    seed=payload.get("seed"),
+                simulator_task = asyncio.create_task(
+                    run_simulator(config, simulator_payload.interval_ms)
                 )
-                interval_ms = int(payload.get("interval_ms", 1000))
-                simulator_task = asyncio.create_task(run_simulator(config, interval_ms))
             elif event_type == "simulator_stop":
                 if simulator_task is not None:
                     simulator_task.cancel()
@@ -112,7 +190,7 @@ def _pipeline() -> QuotePipeline:
     return app.state.pipeline
 
 
-def _parse_sample_rows(filename: str, content: str) -> list[dict[str, Any]]:
+def _parse_sample_rows(filename: str, content: str) -> list[Any]:
     if filename.endswith(".csv"):
         return list(csv.DictReader(StringIO(content)))
 
@@ -129,3 +207,63 @@ def _parse_sample_rows(filename: str, content: str) -> list[dict[str, Any]]:
     if isinstance(parsed, list):
         return parsed
     return [parsed]
+
+
+def _raw_message_from_replay_row(
+    row: Any,
+    replay_id: str,
+    index: int,
+) -> tuple[RawMessage, tuple[RejectionReason, ...]]:
+    if not isinstance(row, dict):
+        return (
+            _fallback_replay_message(replay_id, index, ""),
+            (RejectionReason.UNSUPPORTED_TEMPLATE,),
+        )
+
+    text = row.get("text")
+    reasons: list[RejectionReason] = []
+    try:
+        raw_message = RawMessage(
+            message_id=str(row.get("message_id") or f"{replay_id}-{index}"),
+            broker_id=str(row.get("broker_id") or "USER"),
+            received_timestamp=row.get("received_timestamp") or utc_now(),
+            text=str(text or ""),
+            replay_id=replay_id,
+            replay_sequence=index,
+        )
+    except ValueError:
+        raw_message = RawMessage(
+            message_id=str(row.get("message_id") or f"{replay_id}-{index}"),
+            broker_id=str(row.get("broker_id") or "USER"),
+            received_timestamp=utc_now(),
+            text=str(text or ""),
+            replay_id=replay_id,
+            replay_sequence=index,
+        )
+        reasons.append(RejectionReason.INVALID_TIMESTAMP)
+    if not isinstance(text, str) or not text.strip():
+        reasons.append(RejectionReason.UNSUPPORTED_TEMPLATE)
+    return raw_message, tuple(reasons)
+
+
+def _fallback_replay_message(replay_id: str, index: int, text: str) -> RawMessage:
+    return RawMessage(
+        message_id=f"{replay_id}-{index}",
+        broker_id="USER",
+        received_timestamp=utc_now(),
+        text=text,
+        replay_id=replay_id,
+        replay_sequence=index,
+    )
+
+
+def _validation_message(error: ValidationError) -> str:
+    first_error = error.errors()[0]
+    location = ".".join(str(part) for part in first_error.get("loc", ())) or "payload"
+    return f"{location}: {first_error.get('msg', 'invalid value')}"
+
+
+def _error_message(error: Exception) -> str:
+    if isinstance(error, ValidationError):
+        return _validation_message(error)
+    return str(error)

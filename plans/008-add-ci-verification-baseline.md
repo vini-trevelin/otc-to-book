@@ -6,6 +6,7 @@
 
 ## Status
 
+- **Status**: DONE
 - **Priority**: P1
 - **Effort**: M
 - **Risk**: LOW, mostly tooling and workflow configuration.
@@ -15,7 +16,7 @@
 
 ## Why this matters
 
-This is a quant developer portfolio app. The local verification story is strong, but there is no tracked `.github` workflow and root `pnpm test` does not run Playwright E2E. Direct pushes to `main` can therefore bypass the most important UI integration checks. `pnpm audit --prod` also reports a moderate PostCSS advisory through `apps__web>next>postcss`, and Python dependency audit tooling is absent (`uv run pip-audit` fails because the command is not installed). CI should stay minimal: one workflow that runs exact-version checks, lint, typecheck, unit/API tests, E2E, extraction metrics, and dependency audit gates.
+This is a quant developer portfolio app. The local verification story is strong, but there is no tracked `.github` workflow and root `pnpm test` does not run Playwright E2E. Direct pushes to `main` can therefore bypass the most important UI integration checks. `pnpm audit --prod` also reports a moderate PostCSS advisory through `apps__web>next>postcss`, and Python dependency audit tooling is absent (`uv run pip-audit` fails because the command is not installed). CI should stay minimal: one workflow on pull requests and pushes to `main`, with a fast verification job and a separate E2E job that depends on it.
 
 ## Current state
 
@@ -84,7 +85,12 @@ Relevant excerpts:
 
 ### Step 1: Add the minimal GitHub Actions workflow
 
-Create `.github/workflows/ci.yml` with one workflow on pull requests and pushes to `main`. Use exact major action pins at minimum, and prefer full SHAs if the repo standard is tightened. The job should:
+Create `.github/workflows/ci.yml` with one workflow on pull requests and pushes to `main`. Use exact major action pins at minimum, and prefer full SHAs if the repo standard is tightened. The workflow should contain:
+
+- `verify`: exact-version check, lint, typecheck, unit/API tests, extraction metrics, JS audit, and Python audit if added.
+- `e2e`: Playwright E2E only, with `needs: verify`.
+
+The jobs should:
 
 1. Check out the repo.
 2. Set up Node matching the local `pnpm` lock expectations.
@@ -101,18 +107,20 @@ Keep the workflow readable and boring.
 
 ### Step 2: Decide the Python audit baseline
 
-If adding `pip-audit` is acceptable, add it to `[dependency-groups].dev` with an exact version and update `uv.lock`. Add a CI step `cd apps/api && uv run pip-audit`.
+Add `pip-audit` to `[dependency-groups].dev` with an exact version and update `uv.lock`. Add a CI step `cd apps/api && uv run pip-audit`.
 
-If adding it is not acceptable in this plan, document in `docs/tooling.md` that Python dependency auditing is not yet automated and leave it as a follow-up finding in `plans/README.md`.
+Stop and document Python dependency auditing as deferred only if adding `pip-audit` requires loosening exact pinning or immediately produces noisy advisories that cannot be triaged in this plan.
 
 **Verify**: if added, `cd apps/api && uv run pip-audit` exits 0 or reports only advisories explicitly triaged in the plan/index.
 
 ### Step 3: Make root verification discoverable
 
-Optionally add root scripts:
+Add root scripts:
 
 - `"test:e2e": "pnpm --filter web test:e2e"`
 - `"verify": "pnpm check:versions && pnpm lint && pnpm typecheck && pnpm test && pnpm --filter web test:e2e"`
+
+Keep extraction metrics as a separately documented local command unless a later plan adds a longer `verify:full`. CI still runs extraction metrics.
 
 Keep exact dependency policy unchanged.
 
@@ -131,9 +139,12 @@ This plan is itself verification infrastructure. New code tests are not required
 ## Done criteria
 
 - [ ] `.github/workflows/ci.yml` exists.
+- [ ] CI runs on pull requests and pushes to `main`.
+- [ ] CI has a `verify` job and a separate `e2e` job with `needs: verify`.
 - [ ] CI runs exact-version check, lint, typecheck, unit/API tests, E2E, and extraction metrics.
 - [ ] JS dependency audit gates high/critical production advisories.
-- [ ] Python dependency audit is either added or explicitly documented as deferred.
+- [ ] Python dependency audit is added with exact-pinned `pip-audit`, or explicitly documented as deferred because a STOP condition occurred.
+- [ ] Root `pnpm verify` exists and is documented.
 - [ ] `pnpm check:versions`, `pnpm lint`, `pnpm typecheck`, `pnpm test`, and `pnpm --filter web test:e2e` all exit 0 locally.
 
 ## STOP conditions

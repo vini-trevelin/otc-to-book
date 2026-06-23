@@ -46,19 +46,40 @@ test("side panels expose the book-first shell controls", async ({ page }) => {
   await expect(page.getByRole("heading", { name: "Broker Input" })).toBeVisible();
 });
 
-test("clear all books empties book state while preserving chat", async ({ page }) => {
+test("clear all resets full visible workstation state", async ({ page }) => {
   await page.goto("/");
 
   await expect(page.getByText("connected")).toBeVisible();
   await page.getByLabel("Message").fill("vendo petro27 7.30 5mm");
   await page.getByRole("button", { name: "Send" }).click();
   await expect(page.getByTestId("book-card-PETRO27")).toBeVisible();
+  await expect(page.getByText("vendo petro27 7.30 5mm").first()).toBeVisible();
 
-  await page.getByRole("button", { name: "Clear all books" }).click();
+  await page.getByRole("button", { name: "Clear all" }).click();
 
   await expect(page.getByTestId("book-card-PETRO27")).toHaveCount(0);
   await expect(page.getByText("Book empty")).toBeVisible();
+  await expect(page.getByText("vendo petro27 7.30 5mm").first()).toHaveCount(0);
+});
+
+test("replay upload clears old state and populates chat, events, and book", async ({ page }) => {
+  await page.goto("/");
+
+  await expect(page.getByText("connected")).toBeVisible();
+  await page.getByLabel("Message").fill("vendo bova26 7.40 3mm");
+  await page.getByRole("button", { name: "Send" }).click();
+  await expect(page.getByTestId("book-card-BOVA26")).toBeVisible();
+
+  await page.getByLabel("Replay fixture").setInputFiles("../../data/samples/v1_messages.jsonl");
+
+  await expect(page.getByText(/Replay uploaded: \d+ events/)).toBeVisible();
+  await expect(page.getByText("vendo bova26 7.40 3mm").first()).toHaveCount(0);
   await expect(page.getByText("vendo petro27 7.30 5mm").first()).toBeVisible();
+  await expect(page.getByTestId("book-card-PETRO27")).toBeVisible();
+
+  await expandParsedEvents(page);
+  await expect(page.getByText("message_received").first()).toBeVisible();
+  await expect(page.getByText("quote_event").first()).toBeVisible();
 });
 
 test("replacement quote mutes superseded row", async ({ page }) => {

@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from decimal import Decimal
 from uuid import uuid4
 
 from otc_to_book.domain.models import (
@@ -28,15 +27,33 @@ class QuoteValidator:
                 candidate=candidate,
             )
 
+        raw_ticker = candidate.raw_ticker
+        instrument_id = candidate.instrument_id
+        side = candidate.side
+        quote_value = candidate.quote_value
+        quote_value_type = candidate.quote_value_type
+        quantity = candidate.quantity
+        quantity_unit = candidate.quantity_unit
+        if (
+            raw_ticker is None
+            or instrument_id is None
+            or side is None
+            or quote_value is None
+            or quote_value_type is None
+            or quantity is None
+            or quantity_unit is None
+        ):
+            raise AssertionError("validated quote candidate still has missing fields")
+
         return QuoteEvent(
             event_id=str(uuid4()),
-            raw_ticker=candidate.raw_ticker or "",
-            instrument_id=candidate.instrument_id or "",
-            side=candidate.side,  # type: ignore[arg-type]
-            quote_value=candidate.quote_value or Decimal("0"),
-            quote_value_type=candidate.quote_value_type,  # type: ignore[arg-type]
-            quantity=candidate.quantity or Decimal("0"),
-            quantity_unit=candidate.quantity_unit,  # type: ignore[arg-type]
+            raw_ticker=raw_ticker,
+            instrument_id=instrument_id,
+            side=side,
+            quote_value=quote_value,
+            quote_value_type=quote_value_type,
+            quantity=quantity,
+            quantity_unit=quantity_unit,
             broker_id=candidate.broker_id,
             confidence=candidate.confidence,
             received_timestamp=candidate.received_timestamp,

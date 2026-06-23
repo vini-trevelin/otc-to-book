@@ -28,6 +28,15 @@ class BookRowStatus(StrEnum):
     SUPERSEDED = "SUPERSEDED"
 
 
+class ServerEventType(StrEnum):
+    MESSAGE_RECEIVED = "message_received"
+    QUOTE_PARSED = "quote_parsed"
+    QUOTE_REJECTED = "quote_rejected"
+    QUOTE_EVENT = "quote_event"
+    BOOK_UPDATED = "book_updated"
+    CLIENT_ERROR = "client_error"
+
+
 class RejectionReason(StrEnum):
     NO_QUOTE_DETECTED = "NO_QUOTE_DETECTED"
     MISSING_TICKER = "MISSING_TICKER"
@@ -175,9 +184,14 @@ class BookState(DomainModel):
         return ensure_utc(value)
 
 
+class ClientError(DomainModel):
+    code: str
+    message: str
+
+
 class EventEnvelope(DomainModel):
     event_id: str
-    event_type: str
+    event_type: ServerEventType
     schema_version: int = 1
     sequence: int = Field(ge=1)
     session_id: str

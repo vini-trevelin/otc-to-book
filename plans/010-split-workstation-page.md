@@ -6,6 +6,7 @@
 
 ## Status
 
+- **Status**: DONE
 - **Priority**: P2
 - **Effort**: L
 - **Risk**: MED, because the main UI file is a high-churn integration surface.
@@ -15,7 +16,7 @@
 
 ## Why this matters
 
-`apps/web/app/page.tsx` is 871 lines and is the highest-churn source file in the last 30 commits. It owns WebSocket lifecycle, upload behavior, simulator controls, layout, chat rendering, book rendering, event rendering, and small reusable UI helpers. That makes future UI fixes riskier than necessary and works against the repo goal: minimal, clean architecture, scalable and modular enough for a quant developer portfolio app.
+`apps/web/app/page.tsx` is 871 lines and is the highest-churn source file in the last 30 commits. It owns WebSocket lifecycle, upload behavior, simulator controls, layout, chat rendering, book rendering, event rendering, and small reusable UI helpers. That makes future UI fixes riskier than necessary and works against the repo goal: minimal, clean architecture, scalable and modular enough for a quant developer portfolio app. This should be a large dedicated split after plans 007 and 009 have frozen replay, clear-all, event validation, toast, and connection-pill behavior.
 
 ## Current state
 
@@ -26,7 +27,8 @@
 - `page.tsx:175-403` owns the left sidebar.
 - `page.tsx:405-436` owns the book grid.
 - `page.tsx:438-483` owns the event panel.
-- Local UI primitives already live in `apps/web/components/ui/`; domain-specific components can live under `apps/web/components/`.
+- Local UI primitives already live in `apps/web/components/ui/`; domain-specific components should live under `apps/web/components/workstation/`.
+- Resolved direction: use a workstation controller hook, explicit props, and high-level commands only. Do not introduce React context for this one-page app.
 
 ## Commands you will need
 
@@ -40,15 +42,17 @@
 
 **In scope**
 - `apps/web/app/page.tsx`
-- new files under `apps/web/components/` for domain-specific workstation pieces
-- new files under `apps/web/lib/` for hooks/helpers if needed
+- new files under `apps/web/components/workstation/` for domain-specific workstation pieces
+- `apps/web/lib/use-workstation.ts` plus smaller hooks/helpers if the controller would otherwise become a monolith
 - `apps/web/tests/*` only if imports need adjustment
 
 **Out of scope**
 - Do not change UI copy, layout, colors, event names, or backend API behavior.
 - Do not add a state management library.
+- Do not introduce React context/provider unless prop drilling becomes demonstrably worse than the context tradeoff.
 - Do not move shadcn/Base UI primitives out of `components/ui`.
 - Do not combine this with visual polish.
+- Do not build custom UI primitives; compose existing shadcn/ui components with the project preset.
 
 ## Git workflow
 
@@ -57,35 +61,50 @@
 
 ## Steps
 
-### Step 1: Extract pure book components
+### Step 1: Extract workstation domain components
 
-Move `BookEmptyState`, `BookCardSkeleton`, `BookSideColumn`, and `BookQuoteRow` into a new domain component file, for example `apps/web/components/book-panel.tsx`.
+Create focused files under `apps/web/components/workstation/`, for example:
 
-Props should be explicit and typed with existing `BookRow`/book payload types from `@/lib/events`.
+- `left-sidebar.tsx`
+- `chat-feed.tsx`
+- `replay-upload.tsx`
+- `simulator-controls.tsx`
+- `book-panel.tsx`
+- `event-panel.tsx`
+
+Move existing rendering helpers into these files without changing behavior. Props should be explicit and typed with existing event/book types from `@/lib/events`.
 
 **Verify**: `pnpm --filter web typecheck` exits 0.
 
-### Step 2: Extract side panel primitives and chat rows
+### Step 2: Extract the workstation controller hook
 
-Move `PanelHeader`, `SidebarIndicator`, `RightEdgeIndicator`, `SidebarSection`, `SectionHeading`, `FieldTooltip`, `ConnectPlaceholder`, `EmptyWithSkeleton`, and chat row rendering into one or two focused files under `apps/web/components/`.
+Create `apps/web/lib/use-workstation.ts`. It should own reducer wiring, WebSocket lifecycle, replay upload, simulator commands, clear-all, connection/status state, and toast trigger plumbing.
 
-Do not create a generic abstraction for everything. Keep names domain-specific where the component is domain-specific.
+Expose high-level commands only, for example:
+
+- `submitUserMessage(text)`
+- `uploadReplay(file)`
+- `startSimulator(config)`
+- `stopSimulator()`
+- `clearAll()`
+
+Do not expose low-level `dispatch` or `sendClientEvent` to visual components. If `use-workstation.ts` grows beyond roughly 250-300 lines, split smaller hooks rather than recreating a monolith.
 
 **Verify**: `pnpm --filter web typecheck && pnpm --filter web test` exits 0.
 
-### Step 3: Extract simulator controls
+### Step 3: Compose the route from explicit props
 
-Move `SIMULATOR_HELP` and `NumberStepper` plus the simulator controls block into `apps/web/components/simulator-controls.tsx`. Its props should be values, setters, running state, connection state, and the toggle handler.
+Reduce `apps/web/app/page.tsx` to route-level composition and layout. Target roughly 150-220 lines; under 250 is acceptable if explicit prop wiring is clearer.
 
-Keep the existing vertically stacked plus/minus design and tooltips.
+Keep explicit props from the page into workstation components. Do not introduce context for this split.
 
 **Verify**: `pnpm --filter web test:e2e --grep "side panels"` passes.
 
-### Step 4: Extract WebSocket/replay behavior only if it stays small
+### Step 4: Check behavior stayed frozen
 
-If `page.tsx` is still above roughly 300 lines, extract the WebSocket effect and client event sender into a hook such as `apps/web/lib/use-workstation-stream.ts`. Do not over-abstract: the hook may simply return `{ state, dispatch, isConnected, sendClientEvent }`.
+This is a refactor plan. No copy, layout, event semantics, replay semantics, clear-all behavior, or toast/status behavior should intentionally change.
 
-**Verify**: `pnpm --filter web typecheck` exits 0.
+**Verify**: `pnpm --filter web typecheck` exits 0 and E2E screenshots/DOM behavior show no layout drift.
 
 ### Step 5: Run full UI verification
 
@@ -99,8 +118,10 @@ No new behavior tests are required for this pure refactor. Existing E2E tests ar
 
 ## Done criteria
 
-- [ ] `apps/web/app/page.tsx` is reduced to orchestration/layout composition, ideally under ~300 lines.
-- [ ] Domain components live under `apps/web/components/` and UI primitives remain under `apps/web/components/ui/`.
+- [ ] `apps/web/app/page.tsx` is reduced to orchestration/layout composition, ideally under ~150-220 lines and under 250 unless clarity requires otherwise.
+- [ ] Domain components live under `apps/web/components/workstation/` and UI primitives remain under `apps/web/components/ui/`.
+- [ ] `apps/web/lib/use-workstation.ts` exposes high-level commands only.
+- [ ] Explicit props are used; no React context/provider is introduced.
 - [ ] No visual or behavioral changes are intentional.
 - [ ] `pnpm --filter web typecheck`, `pnpm --filter web test`, and `pnpm --filter web test:e2e` pass.
 
@@ -109,6 +130,7 @@ No new behavior tests are required for this pure refactor. Existing E2E tests ar
 - Refactor requires backend/API changes.
 - E2E screenshots or DOM snapshots show layout drift.
 - The extraction creates generic abstractions that obscure domain names like broker input, book, or parsed events.
+- `use-workstation.ts` becomes a new oversized monolith instead of a controller hook with narrow helpers.
 
 ## Maintenance notes
 

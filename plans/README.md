@@ -24,11 +24,11 @@ honor its STOP conditions, and update the status row when done.
 
 | Plan | Title | Priority | Effort | Depends on | Status |
 |------|-------|----------|--------|------------|--------|
-| 007 | Make replay upload update the workstation and honor replay row failures | P1 | M | — | TODO |
-| 008 | Add a minimal CI verification baseline | P1 | M | — | TODO |
-| 009 | Add runtime validation at WebSocket and frontend event boundaries | P2 | M | 007 recommended | TODO |
-| 010 | Split the workstation page into focused components and hooks | P2 | L | 007 and 009 recommended | TODO |
-| 011 | Replace public README placeholders with a concise portfolio quickstart | P2 | S | — | TODO |
+| 007 | Make replay upload update the workstation and honor replay row failures | P1 | M | — | DONE |
+| 008 | Add a minimal CI verification baseline | P1 | M | — | DONE |
+| 009 | Add runtime validation at WebSocket and frontend event boundaries | P2 | M | 007 recommended | DONE |
+| 010 | Split the workstation page into focused components and hooks | P2 | L | 007 and 009 recommended | DONE |
+| 011 | Replace public README placeholders with a concise portfolio quickstart | P2 | S | — | DONE |
 
 Status values: TODO | IN PROGRESS | DONE | BLOCKED (with one-line reason) | REJECTED (with one-line rationale).
 
@@ -37,6 +37,7 @@ Status values: TODO | IN PROGRESS | DONE | BLOCKED (with one-line reason) | REJE
 - 009 can run before 007, but it is cleaner after 007 because replay upload will add another frontend event ingestion path.
 - 010 should run after behavior changes from 007 and boundary hardening from 009 to avoid refactoring a moving target.
 - 008 and 011 are independent.
+- Grill decision log, 2026-06-23: replay upload is a first-class demo path; clear-all semantics must clear the full visible workstation state and backend book state; recoverable client errors use a new `client_error` event plus shadcn/sonner warning toasts; the connection pill moves beside the left-sidebar title; the workstation split should use a controller hook with explicit props and high-level commands only.
 - Historical: 005 depends on 002 because chaotic fixtures and simulator chaos controls extend the evaluator.
 - Historical: 006 depends on 005 because bounded fuzzy matching needs hard-negative false-merge metrics first.
 
@@ -70,6 +71,41 @@ their full original handoff content.
 - Promote replay from "implemented but not covered" to a first-class demo path after plan 007. This is grounded in `docs/PRODUCT.md:13`, the API replay endpoint, and the current UI upload affordance.
 - Keep future LLM/provider work backend-owned and gated by extraction metrics. This is already documented in `docs/extraction-strategy.md` and should not be implemented until the current deterministic demo path is airtight.
 - Consider a small generated or shared contract package only after plan 009 proves hand-written guards are becoming noisy. Current repo size does not justify it yet.
+
+## Resolved product/architecture decisions
+
+- Replay upload is a first-class deterministic demo path, not a secondary debug helper.
+- Replay processing is best-effort at the row level and fail-fast at the file level.
+- Replay events apply only to the uploading browser for now; do not broadcast replay over WebSocket.
+- Replay must clear existing state first by using the existing clear path, then dispatch returned replay events.
+- Clear all is a minimal left-sidebar footer action with no confirmation. It stops the simulator, clears backend book state, and clears all visible local workstation state.
+- Recoverable bad client messages keep the socket open, emit `client_error`, show a shadcn/sonner toast, and appear in parsed event history.
+- Malformed server events must not mutate state. Surface them through the sidebar connection status pill and a warning toast.
+- `client_error` belongs in the formal event enum/envelope but must not affect book rows or extraction metrics.
+- Use only shadcn/ui registry components with the existing preset for UI primitives. Do not hand-build new toast/status/dialog primitives.
+- Toasts are for errors and warnings only. Replay row rejections get one summary toast, not one toast per row.
+- Do not add event filtering yet.
+- Workstation refactor should be a large dedicated pass after 007 and 009, using a controller hook, explicit props, and high-level commands.
+- README stays command-focused. Keep a non-`TODO` demo media placeholder until real media exists.
+
+## Implementation results
+
+- Implemented plans 007-011 on `codex/improve`.
+- Replay upload now clears visible workstation state and backend book state before applying HTTP-returned replay events.
+- Malformed replay rows emit row-level rejection events without aborting the full replay.
+- Clear all is a minimal full-state reset in the left-sidebar footer and stops the simulator.
+- Runtime event names are constrained by backend enum, recoverable client failures emit `client_error`, and frontend event payloads are guarded before reducer mutation.
+- shadcn sonner is used for warning/error toasts. No custom toast primitive was added.
+- `apps/web/app/page.tsx` is now a composition route backed by `apps/web/lib/use-workstation.ts` and `apps/web/components/workstation/*`.
+- CI exists at `.github/workflows/ci.yml` with `verify` and dependent `e2e` jobs.
+- README placeholders were replaced with a concise objective, status, quickstart, verification, demo media placeholder, and docs links.
+
+Verification after implementation:
+
+- `pnpm verify` passed.
+- `cd apps/api && uv run python scripts/evaluate_extraction.py` reported `exact_row=27/27` and `false_merge=3/3`.
+- `pnpm audit --prod --audit-level high` passed; one moderate JS advisory remains below the configured gate.
+- `cd apps/api && uv run pip-audit` passed with no known vulnerabilities.
 
 ## Historical findings
 

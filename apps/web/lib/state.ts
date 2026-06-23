@@ -1,15 +1,28 @@
 import type {
   BookStatePayload,
+  ClientErrorPayload,
   EventEnvelope,
   QuoteEventPayload,
   QuoteRejectedPayload,
   RawMessagePayload
 } from "@/lib/events";
+import {
+  isBookStatePayload,
+  isClientErrorPayload,
+  isQuoteEventPayload,
+  isQuoteRejectedPayload,
+  isRawMessagePayload
+} from "@/lib/events";
 
 export type ConnectionState = "connecting" | "connected" | "disconnected";
+export type StreamStatus = {
+  tone: "normal" | "warning";
+  message: string | null;
+};
 
 export type WorkstationState = {
   connection: ConnectionState;
+  streamStatus: StreamStatus;
   simulatorRunning: boolean;
   lastSequence: number;
   seenEventIds: Set<string>;
@@ -17,17 +30,20 @@ export type WorkstationState = {
   events: EventEnvelope[];
   quoteEvents: QuoteEventPayload[];
   rejections: QuoteRejectedPayload[];
+  clientErrors: ClientErrorPayload[];
   book: BookStatePayload | null;
 };
 
 export type WorkstationAction =
   | { type: "connection"; connection: ConnectionState }
+  | { type: "stream_status"; status: StreamStatus }
   | { type: "simulator"; running: boolean }
-  | { type: "clear_books" }
+  | { type: "clear_all" }
   | { type: "server_event"; event: EventEnvelope };
 
 export const initialState: WorkstationState = {
   connection: "connecting",
+  streamStatus: { tone: "normal", message: null },
   simulatorRunning: false,
   lastSequence: 0,
   seenEventIds: new Set(),
@@ -35,6 +51,7 @@ export const initialState: WorkstationState = {
   events: [],
   quoteEvents: [],
   rejections: [],
+  clientErrors: [],
   book: null
 };
 
@@ -46,14 +63,20 @@ export function workstationReducer(
     return { ...state, connection: action.connection };
   }
 
+  if (action.type === "stream_status") {
+    return { ...state, streamStatus: action.status };
+  }
+
   if (action.type === "simulator") {
     return { ...state, simulatorRunning: action.running };
   }
 
-  if (action.type === "clear_books") {
+  if (action.type === "clear_all") {
     return {
-      ...state,
-      book: { books: {}, updated_timestamp: new Date().toISOString() }
+      ...initialState,
+      connection: state.connection,
+      streamStatus: state.streamStatus,
+      seenEventIds: new Set()
     };
   }
 
@@ -62,42 +85,62 @@ export function workstationReducer(
     return state;
   }
 
+  if (event.event_type === "message_received") {
+    if (!isRawMessagePayload(event.payload)) return state;
+    const next = nextEventState(state, event);
+    return {
+      ...next,
+      messages: [event.payload, ...state.messages].slice(0, 80)
+    };
+  }
+
+  if (event.event_type === "quote_event") {
+    if (!isQuoteEventPayload(event.payload)) return state;
+    const next = nextEventState(state, event);
+    return {
+      ...next,
+      quoteEvents: [event.payload, ...state.quoteEvents].slice(0, 80)
+    };
+  }
+
+  if (event.event_type === "quote_rejected") {
+    if (!isQuoteRejectedPayload(event.payload)) return state;
+    const next = nextEventState(state, event);
+    return {
+      ...next,
+      rejections: [event.payload, ...state.rejections].slice(0, 80)
+    };
+  }
+
+  if (event.event_type === "book_updated") {
+    if (!isBookStatePayload(event.payload)) return state;
+    const next = nextEventState(state, event);
+    return {
+      ...next,
+      book: event.payload
+    };
+  }
+
+  if (event.event_type === "client_error") {
+    if (!isClientErrorPayload(event.payload)) return state;
+    const next = nextEventState(state, event);
+    return {
+      ...next,
+      streamStatus: { tone: "warning", message: event.payload.message },
+      clientErrors: [event.payload, ...state.clientErrors].slice(0, 80)
+    };
+  }
+
+  return nextEventState(state, event);
+}
+
+function nextEventState(state: WorkstationState, event: EventEnvelope): WorkstationState {
   const seenEventIds = new Set(state.seenEventIds);
   seenEventIds.add(event.event_id);
-  const next: WorkstationState = {
+  return {
     ...state,
     lastSequence: event.sequence,
     seenEventIds,
     events: [event, ...state.events].slice(0, 80)
   };
-
-  if (event.event_type === "message_received") {
-    return {
-      ...next,
-      messages: [event.payload as RawMessagePayload, ...state.messages].slice(0, 80)
-    };
-  }
-
-  if (event.event_type === "quote_event") {
-    return {
-      ...next,
-      quoteEvents: [event.payload as QuoteEventPayload, ...state.quoteEvents].slice(0, 80)
-    };
-  }
-
-  if (event.event_type === "quote_rejected") {
-    return {
-      ...next,
-      rejections: [event.payload as QuoteRejectedPayload, ...state.rejections].slice(0, 80)
-    };
-  }
-
-  if (event.event_type === "book_updated") {
-    return {
-      ...next,
-      book: event.payload as BookStatePayload
-    };
-  }
-
-  return next;
 }
