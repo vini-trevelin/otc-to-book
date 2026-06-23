@@ -16,7 +16,7 @@ export default function WorkstationPage() {
   const [rightOpen, setRightOpen] = useState(false);
 
   return (
-    <TooltipProvider>
+    <TooltipProvider delay={0}>
       <main
         className={cn(
           "relative grid h-screen min-h-0 grid-cols-1 gap-3 overflow-hidden bg-background p-3 text-foreground transition-[grid-template-columns] duration-200 ease-out lg:grid-cols-[minmax(300px,340px)_minmax(0,1fr)]",
