@@ -60,7 +60,7 @@ describe("workstationReducer", () => {
     expect(second.messages).toHaveLength(1);
   });
 
-  it("clears book state without clearing provenance feeds", () => {
+  it("clears full visible workstation state", () => {
     const state = workstationReducer(initialState, {
       type: "server_event",
       event: envelope(1)
@@ -86,10 +86,44 @@ describe("workstationReducer", () => {
       }
     });
 
-    const cleared = workstationReducer(withBook, { type: "clear_books" });
+    const cleared = workstationReducer(withBook, { type: "clear_all" });
 
-    expect(cleared.book?.books).toEqual({});
-    expect(cleared.messages).toHaveLength(1);
-    expect(cleared.events).toHaveLength(2);
+    expect(cleared.book).toBeNull();
+    expect(cleared.messages).toHaveLength(0);
+    expect(cleared.events).toHaveLength(0);
+    expect(cleared.lastSequence).toBe(0);
+  });
+
+  it("ignores malformed payloads without mutating event feeds", () => {
+    const state = workstationReducer(initialState, {
+      type: "server_event",
+      event: {
+        ...envelope(1),
+        payload: { message_id: "missing-fields" }
+      }
+    });
+
+    expect(state.messages).toHaveLength(0);
+    expect(state.events).toHaveLength(0);
+    expect(state.lastSequence).toBe(0);
+  });
+
+  it("stores client errors in event history without touching book state", () => {
+    const state = workstationReducer(initialState, {
+      type: "server_event",
+      event: {
+        ...envelope(1),
+        event_type: "client_error",
+        payload: {
+          code: "invalid_user_message",
+          message: "payload.text: invalid"
+        }
+      }
+    });
+
+    expect(state.events).toHaveLength(1);
+    expect(state.clientErrors).toHaveLength(1);
+    expect(state.streamStatus.tone).toBe("warning");
+    expect(state.book).toBeNull();
   });
 });

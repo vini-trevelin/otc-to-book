@@ -60,6 +60,8 @@ Commands:
 - `pnpm install`
 - `pnpm dev`
 - `pnpm test`
+- `pnpm test:e2e`
+- `pnpm verify`
 - `pnpm lint`
 - `pnpm typecheck`
 - `pnpm --filter web test:e2e`
@@ -70,6 +72,15 @@ API commands:
 - `cd apps/api && uv sync`
 - `cd apps/api && uv run pytest`
 - `cd apps/api && uv run ruff check .`
+- `cd apps/api && uv run python scripts/evaluate_extraction.py`
+- `cd apps/api && uv run pip-audit`
+
+CI:
+
+- `.github/workflows/ci.yml` runs on pull requests and pushes to `main`.
+- `verify` job runs exact-version checks, lint, typecheck, unit/API tests, extraction metrics, JS high/critical audit, and Python dependency audit.
+- `e2e` job depends on `verify` and runs Playwright Chromium tests.
+- Local `pnpm verify` mirrors the common local gate and includes E2E. Extraction metrics remain a separate documented local command.
 
 ## Install Rule
 

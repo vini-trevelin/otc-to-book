@@ -85,12 +85,13 @@ Server-to-client events:
 - `quote_rejected`: candidate failed validation or message was noise.
 - `quote_event`: valid immutable event created.
 - `book_updated`: book state changed.
+- `client_error`: recoverable client command or payload error.
 
 Clear rules:
 
 - `book_clear` emits a `book_updated` event with an empty `books` payload.
-- Clearing books does not erase raw message history, parsed event history, simulator state, or the session-scoped ticker resolver.
-- The control is a workstation reset affordance for display/book rows only, not a full session reset.
+- The frontend Clear all control treats this as a full visible workstation reset: it stops the simulator, clears local raw messages, parsed events, upload status, and book rows, then waits for the backend empty-book event.
+- Clearing does not reset the backend process or the session-scoped ticker resolver.
 
 HTTP endpoints:
 
@@ -104,6 +105,7 @@ Replay rules:
 - Each replay item receives a 1-based `replay_sequence`.
 - Replaying the same file is allowed and creates new message/event IDs.
 - Malformed rows emit rejection events when possible and do not stop the full replay unless the file itself cannot be parsed.
+- The current workstation replay flow clears the visible workstation and backend book state first, then applies replay events only in the uploading browser.
 
 ## Monorepo Shape
 

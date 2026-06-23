@@ -47,7 +47,8 @@ Current chat behavior:
 - Simulator numeric variable controls use compact vertically stacked increment/decrement buttons beside the input so dense controls stay aligned in the left sidebar.
 - Chat feed consumes the remaining left sidebar height and scrolls internally; raw messages must not grow the page or sidebar beyond the viewport.
 - Chat messages use compact bordered tape rows with broker, 24-hour timestamp, and raw text.
-- The left sidebar includes a Clear all books action under the chat feed. It clears backend book rows while preserving raw chat and parsed event provenance.
+- The left sidebar includes a minimal Clear all action under every other sidebar section. It stops the simulator, clears backend book rows through the existing `book_clear` path, and resets all visible workstation state.
+- The connection status pill sits beside the left sidebar header title. Recoverable contract warnings surface there instead of using a separate page banner.
 - Empty/future-state placeholders use static shadcn-style skeletons with muted contrast.
 
 ## Book Panel
@@ -97,6 +98,14 @@ Required UI states:
 - empty book.
 - rejected/noise messages.
 - clear all books requested/empty book state.
+- recoverable client/server contract warnings.
+
+Boundary handling:
+
+- Recoverable malformed client commands remain connected and produce a `client_error` event.
+- `client_error` events show a shadcn/sonner warning toast and remain visible in parsed event history.
+- Malformed server events are ignored for state mutation and surfaced through the connection status pill plus a warning toast.
+- Toasts are reserved for warnings and errors, not successful replay or clear actions.
 
 ## Future Extraction Controls
 
@@ -118,8 +127,7 @@ Meaningful frontend flow requires E2E tests:
 - Send user message and see chat + parsed event + book update.
 - Start auto simulator and see live events.
 - Verify stale row muting after same broker/instrument/side replacement.
-
-Replay upload E2E coverage is still needed. Current replay behavior is implemented, but upload is not yet covered by the Playwright suite.
+- Upload a replay fixture and verify previous visible state is cleared before chat, parsed events, and book update from replay events.
 
 ## Component Pattern Diagnosis
 
@@ -141,17 +149,13 @@ Items to revisit when polishing:
 
 These are deferred design/UX items, not active scope. Order reflects current priority.
 
-1. Add replay upload E2E coverage.
-   Acceptance: Playwright uploads a sample file, verifies events/book updates, and covers visible failure or status behavior.
-2. Add keyboard accelerators for send, simulator toggle, sidebar collapse, and event reveal.
+1. Add keyboard accelerators for send, simulator toggle, sidebar collapse, and event reveal.
    Acceptance: shortcuts are documented in UI-facing docs and covered by interaction or E2E tests.
-3. Add a compact event/provenance hint near the book or after message send, without making the right sidebar visible by default.
+2. Add a compact event/provenance hint near the book or after message send, without making the right sidebar visible by default.
    Acceptance: users can discover parsed events from the book-first layout, and the right sidebar still defaults hidden.
-4. Polish replay upload into a quieter button/label control while preserving native file behavior.
+3. Polish replay upload into a quieter button/label control while preserving native file behavior.
    Acceptance: upload affordance aligns with compact controls and keeps visible success/failure feedback.
-5. Add replay upload in-progress state.
+4. Add replay upload in-progress state.
    Acceptance: uploading cannot appear idle while processing.
-6. Consider clear/reset affordances for raw messages and replay status.
-   Acceptance: reset behavior is explicit and does not erase book state accidentally.
-7. Consider flattening empty book skeletons into a single low-emphasis strip if detector-clean placeholders become important.
+5. Consider flattening empty book skeletons into a single low-emphasis strip if detector-clean placeholders become important.
    Acceptance: empty state remains understandable without reading as a nested card.

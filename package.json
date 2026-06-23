@@ -8,6 +8,8 @@
     "dev": "turbo dev",
     "lint": "turbo lint",
     "test": "turbo test",
+    "test:e2e": "pnpm --filter web test:e2e",
+    "verify": "pnpm check:versions && pnpm lint && pnpm typecheck && pnpm test && pnpm test:e2e",
     "typecheck": "turbo typecheck"
   },
   "devDependencies": {
