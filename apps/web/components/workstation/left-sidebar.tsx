@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronLeft, MessageSquare, Play, RotateCcw, Send, Square } from "lucide-react";
+import { ChevronLeft, MessageSquare, Play, RotateCcw, Send, Square, Upload } from "lucide-react";
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -228,6 +228,9 @@ function SimulatorControls({ controller }: { controller: WorkstationController }
 }
 
 function ReplayAndMessageControls({ controller }: { controller: WorkstationController }) {
+  const replayInputId = "replay-fixture-input";
+  const uploadDisabled = !controller.isConnected || controller.uploadingReplay;
+
   return (
     <form className="space-y-2" onSubmit={controller.submitUserMessage}>
       <div className="grid grid-cols-[1fr_104px] gap-2">
@@ -251,15 +254,33 @@ function ReplayAndMessageControls({ controller }: { controller: WorkstationContr
       <Button className="gap-2" type="submit" variant="secondary" disabled={!controller.isConnected}>
         <Send size={16} /> Send
       </Button>
-      <Label className="block text-[11px] text-[var(--muted-foreground)]">
-        Replay fixture
+      <div className="space-y-1.5">
+        <Label
+          className={cn(
+            "inline-flex h-7 w-full cursor-pointer items-center justify-center gap-2 rounded-md border border-[var(--border)] bg-[var(--panel-strong)] px-2 text-[11px] font-medium text-foreground transition-colors hover:bg-zinc-800",
+            uploadDisabled && "pointer-events-none cursor-not-allowed opacity-50"
+          )}
+          htmlFor={replayInputId}
+          aria-disabled={uploadDisabled}
+        >
+          <Upload size={13} />
+          Replay fixture
+        </Label>
         <Input
-          className="mt-1.5 block h-7 w-full text-[11px]"
+          id={replayInputId}
+          className="sr-only"
           type="file"
           accept=".csv,.json,.jsonl"
-          onChange={(event) => void controller.uploadReplay(event.target.files?.[0] ?? null)}
+          disabled={uploadDisabled}
+          onChange={(event) => {
+            void controller.uploadReplay(event.target.files?.[0] ?? null);
+            event.currentTarget.value = "";
+          }}
         />
-      </Label>
+      </div>
+      {controller.uploadingReplay ? (
+        <p className="text-xs text-[var(--muted-foreground)]">Uploading replay...</p>
+      ) : null}
       {controller.uploadStatus ? (
         <p className="text-xs text-[var(--muted-foreground)]">{controller.uploadStatus}</p>
       ) : null}

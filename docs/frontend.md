@@ -22,7 +22,7 @@ Current shell decisions:
 Modes:
 
 - User mode: type and send messages.
-- User mode replay: upload JSON/CSV sample messages.
+- User mode replay: upload JSON/JSONL/CSV sample messages.
 - Auto mode: backend-generated broker chat.
 
 Auto controls:
@@ -95,6 +95,7 @@ Required UI states:
 - disconnected/retry.
 - simulator running/stopped.
 - upload success/failure.
+- replay upload in progress.
 - empty book.
 - rejected/noise messages.
 - clear all books requested/empty book state.
@@ -128,6 +129,7 @@ Meaningful frontend flow requires E2E tests:
 - Start auto simulator and see live events.
 - Verify stale row muting after same broker/instrument/side replacement.
 - Upload a replay fixture and verify previous visible state is cleared before chat, parsed events, and book update from replay events.
+- Uploading a replay fixture must not clear another connected workstation's backend-derived book state.
 
 ## Component Pattern Diagnosis
 
@@ -141,7 +143,6 @@ Current accepted exceptions:
 
 Items to revisit when polishing:
 
-- Replay upload still presents as a native file input; it should become a quieter button/label control while preserving native behavior.
 - Slider thumb styling contains a hardcoded white surface; this is acceptable in the current dark-only theme but should move to tokens if theme variability returns.
 - Empty book skeletons sit inside a dashed placeholder container. This is low-risk now, but can be flattened if the placeholder visual weight becomes too high.
 
@@ -153,9 +154,12 @@ These are deferred design/UX items, not active scope. Order reflects current pri
    Acceptance: shortcuts are documented in UI-facing docs and covered by interaction or E2E tests.
 2. Add a compact event/provenance hint near the book or after message send, without making the right sidebar visible by default.
    Acceptance: users can discover parsed events from the book-first layout, and the right sidebar still defaults hidden.
-3. Polish replay upload into a quieter button/label control while preserving native file behavior.
-   Acceptance: upload affordance aligns with compact controls and keeps visible success/failure feedback.
-4. Add replay upload in-progress state.
-   Acceptance: uploading cannot appear idle while processing.
-5. Consider flattening empty book skeletons into a single low-emphasis strip if detector-clean placeholders become important.
+3. Consider flattening empty book skeletons into a single low-emphasis strip if detector-clean placeholders become important.
    Acceptance: empty state remains understandable without reading as a nested card.
+
+## Replay Upload
+
+Replay upload uses a compact button/label control backed by a native file input.
+It accepts `.csv`, `.json`, and `.jsonl` fixtures, shows inline uploading,
+success, and error states, and applies returned replay events only to the
+uploading browser after a local visible reset.

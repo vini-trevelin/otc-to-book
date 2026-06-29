@@ -82,6 +82,40 @@ test("replay upload clears old state and populates chat, events, and book", asyn
   await expect(page.getByText("quote_event").first()).toBeVisible();
 });
 
+test("replay upload shows in-progress state", async ({ page }) => {
+  await page.route("**/samples/replay", async (route) => {
+    await new Promise((resolve) => setTimeout(resolve, 250));
+    await route.continue();
+  });
+  await page.goto("/");
+
+  await expect(page.getByText("connected")).toBeVisible();
+  await page.getByLabel("Replay fixture").setInputFiles("../../data/samples/v1_messages.jsonl");
+
+  await expect(page.getByText("Uploading replay...")).toBeVisible();
+  await expect(page.getByText(/Replay uploaded: \d+ events/)).toBeVisible();
+});
+
+test("replay upload does not clear another workstation backend book", async ({ page, context }) => {
+  const otherPage = await context.newPage();
+  await page.goto("/");
+  await otherPage.goto("/");
+
+  await expect(page.getByText("connected")).toBeVisible();
+  await expect(otherPage.getByText("connected")).toBeVisible();
+  await otherPage.getByLabel("Message").fill("vendo bova26 7.40 3mm");
+  await otherPage.getByRole("button", { name: "Send" }).click();
+  await expect(otherPage.getByTestId("book-card-BOVA26")).toBeVisible();
+
+  await page.getByLabel("Replay fixture").setInputFiles("../../data/samples/v1_messages.jsonl");
+  await expect(page.getByText(/Replay uploaded: \d+ events/)).toBeVisible();
+
+  await otherPage.getByLabel("Message").fill("bid vale29 7.35");
+  await otherPage.getByRole("button", { name: "Send" }).click();
+  await expect(otherPage.getByTestId("book-card-BOVA26")).toBeVisible();
+  await expect(otherPage.getByTestId("book-card-VALE29")).toBeVisible();
+});
+
 test("replacement quote mutes superseded row", async ({ page }) => {
   await page.goto("/");
 

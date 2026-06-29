@@ -4,10 +4,11 @@ import asyncio
 import csv
 import json
 from io import StringIO
+from pathlib import PurePath
 from typing import Any, Literal
 from uuid import uuid4
 
-from fastapi import FastAPI, File, UploadFile, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, File, HTTPException, UploadFile, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field, ValidationError
 
@@ -17,6 +18,8 @@ from otc_to_book.simulator.generator import ChatMessageGenerator, SimulatorConfi
 
 app = FastAPI(title="OTC-to-Book API", version="0.1.0")
 SAMPLE_FILE = File(...)
+MAX_REPLAY_UPLOAD_BYTES = 20_000_000
+SUPPORTED_REPLAY_SUFFIXES = {".csv", ".json", ".jsonl"}
 
 app.add_middleware(
     CORSMiddleware,
@@ -54,9 +57,15 @@ def health() -> dict[str, str]:
 
 @app.post("/samples/replay")
 async def replay_samples(file: UploadFile = SAMPLE_FILE) -> dict[str, Any]:
-    pipeline = _pipeline()
+    pipeline = QuotePipeline()
     replay_id = str(uuid4())
-    content = (await file.read()).decode("utf-8")
+    raw_content = await file.read(MAX_REPLAY_UPLOAD_BYTES + 1)
+    if len(raw_content) > MAX_REPLAY_UPLOAD_BYTES:
+        raise HTTPException(status_code=413, detail="replay file is too large")
+    try:
+        content = raw_content.decode("utf-8")
+    except UnicodeDecodeError as exc:
+        raise HTTPException(status_code=400, detail="replay file must be utf-8") from exc
     rows = _parse_sample_rows(file.filename or "", content)
     all_events = []
     rejected_rows = 0
@@ -191,20 +200,35 @@ def _pipeline() -> QuotePipeline:
 
 
 def _parse_sample_rows(filename: str, content: str) -> list[Any]:
-    if filename.endswith(".csv"):
-        return list(csv.DictReader(StringIO(content)))
-
-    rows = []
+    suffix = PurePath(filename).suffix.lower()
+    if suffix not in SUPPORTED_REPLAY_SUFFIXES:
+        raise HTTPException(status_code=400, detail="unsupported replay file type")
     stripped = content.strip()
     if not stripped:
-        return rows
-    if filename.endswith(".jsonl"):
-        for line in stripped.splitlines():
-            rows.append(json.loads(line))
-        return rows
+        raise HTTPException(status_code=400, detail="replay file is empty")
 
-    parsed = json.loads(stripped)
+    try:
+        if suffix == ".csv":
+            rows = list(csv.DictReader(StringIO(content), strict=True))
+            if not rows:
+                raise HTTPException(status_code=400, detail="replay file is empty")
+            return rows
+
+        if suffix == ".jsonl":
+            rows = [json.loads(line) for line in stripped.splitlines()]
+            if not rows:
+                raise HTTPException(status_code=400, detail="replay file is empty")
+            return rows
+
+        parsed = json.loads(stripped)
+    except csv.Error as exc:
+        raise HTTPException(status_code=400, detail="replay file could not be parsed") from exc
+    except json.JSONDecodeError as exc:
+        raise HTTPException(status_code=400, detail="replay file could not be parsed") from exc
+
     if isinstance(parsed, list):
+        if not parsed:
+            raise HTTPException(status_code=400, detail="replay file is empty")
         return parsed
     return [parsed]
 
