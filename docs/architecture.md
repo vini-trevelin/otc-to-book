@@ -96,7 +96,7 @@ Clear rules:
 HTTP endpoints:
 
 - `GET /health`
-- `POST /samples/replay` for CSV/JSON sample replay.
+- `POST /samples/replay` for CSV/JSON/JSONL sample replay.
 
 Replay rules:
 
@@ -105,7 +105,10 @@ Replay rules:
 - Each replay item receives a 1-based `replay_sequence`.
 - Replaying the same file is allowed and creates new message/event IDs.
 - Malformed rows emit rejection events when possible and do not stop the full replay unless the file itself cannot be parsed.
-- The current workstation replay flow clears the visible workstation and backend book state first, then applies replay events only in the uploading browser.
+- Unsupported file types, invalid UTF-8, invalid JSON/JSONL, empty files, and files larger than 20MB fail before row processing.
+- The current workstation replay flow clears only the uploading browser's visible state before applying returned replay events.
+- HTTP replay is processed through an isolated replay pipeline. Returned replay events apply only in the uploading browser.
+- Replay does not broadcast over WebSocket and does not mutate the shared WebSocket pipeline state.
 
 ## Monorepo Shape
 

@@ -6,7 +6,7 @@ Status values: TODO | IN PROGRESS | DONE | BLOCKED.
 
 V1 implementation, UI polish, and extractor evaluation are complete and merged to `main`.
 
-Active implementation branch: `codex/improve`.
+Active implementation branch: `replay-hardening`.
 
 Completed work:
 
@@ -36,6 +36,12 @@ Completed improvement plans:
 - `plans/010-split-workstation-page.md` - DONE.
 - `plans/011-replace-public-readme-placeholders.md` - DONE.
 
+Replay hardening plans:
+
+- `plans/012-replay-state-semantics.md` - DONE.
+- `plans/013-harden-replay-upload-boundaries.md` - DONE.
+- `plans/014-polish-replay-upload-ux.md` - DONE.
+
 ## Current UI Iteration Plan
 
 Acceptance:
@@ -57,7 +63,9 @@ Results:
 ## Review Results
 
 - Plans 007-011 were implemented on `codex/improve`.
-- Replay upload is now a first-class deterministic demo path with full-state clear before replay dispatch.
+- Replay upload is now a first-class deterministic demo path. Replay upload clears only the uploading browser's visible state and uses an isolated HTTP replay pipeline.
+- Replay upload file-level boundaries reject unsupported suffixes, invalid UTF-8, invalid JSON/JSONL, empty files, and files over 20MB with deterministic 4xx responses.
+- Replay upload uses a compact button/label control with inline uploading, success, and error states.
 - Clear all resets visible workstation state, stops the simulator, and clears backend book rows.
 - Runtime boundaries now include backend event enums, `client_error`, frontend payload guards, shadcn sonner warning toasts, and connection-pill warning state.
 - The workstation route was split into a controller hook and `components/workstation/*` domain components.

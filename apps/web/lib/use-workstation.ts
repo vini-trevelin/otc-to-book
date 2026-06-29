@@ -31,6 +31,10 @@ type ReplayResponse = {
   rejected_rows?: number;
 };
 
+type ReplayErrorResponse = {
+  detail?: unknown;
+};
+
 export function useWorkstation() {
   const [state, dispatch] = useReducer(workstationReducer, initialState);
   const socketRef = useRef<WebSocket | null>(null);
@@ -45,6 +49,7 @@ export function useWorkstation() {
   const [intervalMs, setIntervalMs] = useState(DEFAULT_INTERVAL_MS);
   const [uploadStatus, setUploadStatus] = useState("");
   const [uploadError, setUploadError] = useState("");
+  const [uploadingReplay, setUploadingReplay] = useState(false);
 
   const handleServerEvent = useCallback((event: EventEnvelope) => {
     if (event.event_type === "client_error" && isClientErrorPayload(event.payload)) {
@@ -135,10 +140,7 @@ export function useWorkstation() {
     });
   }, [isConnected]);
 
-  const clearAll = useCallback(async () => {
-    if (state.simulatorRunning) {
-      stopSimulator();
-    }
+  const resetVisibleWorkstationState = useCallback(() => {
     dispatch({ type: "clear_all" });
     setMessage(DEFAULT_MESSAGE);
     setBrokerId(DEFAULT_BROKER_ID);
@@ -150,11 +152,24 @@ export function useWorkstation() {
     setIntervalMs(DEFAULT_INTERVAL_MS);
     setUploadStatus("");
     setUploadError("");
+  }, []);
+
+  const clearAll = useCallback(async () => {
+    if (state.simulatorRunning) {
+      stopSimulator();
+    }
+    resetVisibleWorkstationState();
 
     const clearAck = waitForClear();
     sendClientEvent({ event_type: "book_clear", payload: {} });
     await clearAck;
-  }, [sendClientEvent, state.simulatorRunning, stopSimulator, waitForClear]);
+  }, [
+    resetVisibleWorkstationState,
+    sendClientEvent,
+    state.simulatorRunning,
+    stopSimulator,
+    waitForClear
+  ]);
 
   const submitUserMessage = useCallback(
     (event: FormEvent) => {
@@ -203,9 +218,12 @@ export function useWorkstation() {
   const uploadReplay = useCallback(
     async (file: File | null) => {
       if (!file) return;
-      setUploadStatus("");
-      setUploadError("");
-      await clearAll();
+      if (uploadingReplay) return;
+      setUploadingReplay(true);
+      if (state.simulatorRunning) {
+        stopSimulator();
+      }
+      resetVisibleWorkstationState();
 
       const formData = new FormData();
       formData.append("file", file);
@@ -215,7 +233,7 @@ export function useWorkstation() {
           body: formData
         });
         if (!response.ok) {
-          setUploadError("Replay failed. Check file type/schema, then retry.");
+          setUploadError(await replayErrorMessage(response));
           return;
         }
         const body = (await response.json()) as ReplayResponse;
@@ -234,9 +252,18 @@ export function useWorkstation() {
         }
       } catch {
         setUploadError("Replay failed. API unavailable; verify backend on port 8000.");
+      } finally {
+        setUploadingReplay(false);
       }
     },
-    [clearAll, handleServerEvent, handleUnknownServerEvent]
+    [
+      handleServerEvent,
+      handleUnknownServerEvent,
+      resetVisibleWorkstationState,
+      state.simulatorRunning,
+      stopSimulator,
+      uploadingReplay
+    ]
   );
 
   return {
@@ -261,6 +288,7 @@ export function useWorkstation() {
     setIntervalMs,
     uploadStatus,
     uploadError,
+    uploadingReplay,
     submitUserMessage,
     uploadReplay,
     toggleSimulator,
@@ -269,6 +297,22 @@ export function useWorkstation() {
 }
 
 export type WorkstationController = ReturnType<typeof useWorkstation>;
+
+async function replayErrorMessage(response: Response): Promise<string> {
+  try {
+    const body = (await response.json()) as ReplayErrorResponse;
+    if (isSafeReplayDetail(body.detail)) {
+      return `Replay failed: ${body.detail}`;
+    }
+  } catch {
+    // Fall through to the generic message below.
+  }
+  return "Replay failed. Check file type/schema, then retry.";
+}
+
+function isSafeReplayDetail(value: unknown): value is string {
+  return typeof value === "string" && value.length > 0 && value.length <= 120;
+}
 
 function isEmptyBookPayload(value: unknown): value is BookStatePayload {
   return (

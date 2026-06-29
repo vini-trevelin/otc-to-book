@@ -24,6 +24,9 @@ honor its STOP conditions, and update the status row when done.
 
 | Plan | Title | Priority | Effort | Depends on | Status |
 |------|-------|----------|--------|------------|--------|
+| 012 | Make replay state semantics explicit and consistent | P1 | M | — | DONE |
+| 013 | Harden replay upload file and parse boundaries | P1 | M | 012 | DONE |
+| 014 | Polish replay upload UX and in-progress state | P2 | M | 013 | DONE |
 | 007 | Make replay upload update the workstation and honor replay row failures | P1 | M | — | DONE |
 | 008 | Add a minimal CI verification baseline | P1 | M | — | DONE |
 | 009 | Add runtime validation at WebSocket and frontend event boundaries | P2 | M | 007 recommended | DONE |
@@ -34,6 +37,9 @@ Status values: TODO | IN PROGRESS | DONE | BLOCKED (with one-line reason) | REJE
 
 ## Dependency notes
 
+- Replay-hardening branch: execute plans 012, 013, and 014 sequentially on branch `replay-hardening`.
+- 013 depends on 012 because file-boundary hardening should not be mixed with replay state semantics; first decide and test whether HTTP replay is isolated from the shared WebSocket pipeline.
+- 014 depends on 013 because frontend replay UX should surface the hardened backend error details and should not be designed against the older generic failure behavior.
 - 009 can run before 007, but it is cleaner after 007 because replay upload will add another frontend event ingestion path.
 - 010 should run after behavior changes from 007 and boundary hardening from 009 to avoid refactoring a moving target.
 - 008 and 011 are independent.
@@ -72,12 +78,43 @@ their full original handoff content.
 - Keep future LLM/provider work backend-owned and gated by extraction metrics. This is already documented in `docs/extraction-strategy.md` and should not be implemented until the current deterministic demo path is airtight.
 - Consider a small generated or shared contract package only after plan 009 proves hand-written guards are becoming noisy. Current repo size does not justify it yet.
 
+## Replay hardening audit, 2026-06-29
+
+Current branch state:
+
+- Local and remote implementation branches were cleaned up; only `main` / `origin/main` remain.
+- Planned implementation branch for this batch: `replay-hardening`.
+- Planned at commit: `c1b4958`.
+
+Verification observed before writing plans:
+
+- `pnpm check:versions` passed.
+- `pnpm --filter api test` passed: 55 tests.
+- `pnpm --filter web test` passed: 7 tests.
+- `pnpm lint && pnpm typecheck` passed.
+- `cd apps/api && uv run python scripts/evaluate_extraction.py` reported `exact_row=27/27` and `false_merge=3/3`.
+- `pnpm audit --prod --audit-level high` passed; one moderate JS advisory remains below the configured gate.
+- `cd apps/api && uv run pip-audit` passed.
+
+New vetted replay findings:
+
+| # | Finding | Category | Impact | Effort | Risk | Evidence |
+|---|---------|----------|--------|--------|------|----------|
+| 8 | Replay upload can mutate shared backend book state while returned replay events apply only in the uploading browser | correctness, architecture | A second connected workstation can become stale because HTTP replay uses the shared pipeline and the frontend pre-clear sends `book_clear` before upload. For V1, the chosen fix is to keep replay browser-local by using an isolated replay pipeline and local-only replay pre-clear. | M | MED | `apps/api/src/otc_to_book/api/main.py:55-77`; `apps/api/src/otc_to_book/api/main.py:187-190`; `apps/web/lib/use-workstation.ts:203-208`; `docs/architecture.md:101-108`. |
+| 9 | Replay file-level failures are not deterministic or bounded | security, dx | Invalid UTF-8, invalid JSON/JSONL, unsupported file types, empty files, and oversized uploads can produce generic server failures or unbounded reads instead of clear 4xx responses. | M | LOW | `apps/api/src/otc_to_book/api/main.py:59`; `apps/api/src/otc_to_book/api/main.py:193-209`; `apps/api/tests/test_api_ws.py:93-118`. |
+| 10 | Replay upload interaction lacks in-progress state and still exposes a raw native file input | frontend, tests | Replay is a first-class demo path, but the upload affordance is less polished than the rest of the workstation and can appear idle while processing. | M | LOW | `apps/web/lib/use-workstation.ts:203-237`; `apps/web/components/workstation/left-sidebar.tsx:254-262`; `docs/frontend.md:142-159`. |
+
 ## Resolved product/architecture decisions
 
 - Replay upload is a first-class deterministic demo path, not a secondary debug helper.
 - Replay processing is best-effort at the row level and fail-fast at the file level.
 - Replay events apply only to the uploading browser for now; do not broadcast replay over WebSocket.
-- Replay must clear existing state first by using the existing clear path, then dispatch returned replay events.
+- Replay upload clears only the uploading browser's visible workstation state,
+  then dispatches returned replay events locally. It must not send `book_clear`
+  or mutate the shared WebSocket pipeline.
+- The existing replay HTTP response shape should be preserved; if a real gap
+  appears during implementation, ask the architect before changing it.
+- Replay upload supports `.csv`, `.json`, and `.jsonl` files with a 20MB cap.
 - Clear all is a minimal left-sidebar footer action with no confirmation. It stops the simulator, clears backend book state, and clears all visible local workstation state.
 - Recoverable bad client messages keep the socket open, emit `client_error`, show a shadcn/sonner toast, and appear in parsed event history.
 - Malformed server events must not mutate state. Surface them through the sidebar connection status pill and a warning toast.
@@ -91,7 +128,10 @@ their full original handoff content.
 ## Implementation results
 
 - Implemented plans 007-011 on `codex/improve`.
-- Replay upload now clears visible workstation state and backend book state before applying HTTP-returned replay events.
+- Implemented plans 012-014 on `replay-hardening`.
+- Replay upload now clears only the uploading browser's visible workstation state before applying HTTP-returned replay events from an isolated replay pipeline.
+- Replay upload file-level boundaries now reject unsupported suffixes, invalid UTF-8, invalid JSON/JSONL, empty files, and files over 20MB with deterministic 4xx responses.
+- Replay upload now uses a compact button/label control with visible uploading, success, and error states.
 - Malformed replay rows emit row-level rejection events without aborting the full replay.
 - Clear all is a minimal full-state reset in the left-sidebar footer and stops the simulator.
 - Runtime event names are constrained by backend enum, recoverable client failures emit `client_error`, and frontend event payloads are guarded before reducer mutation.
